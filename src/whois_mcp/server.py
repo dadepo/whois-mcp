@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 env_path = Path(".env")
@@ -15,6 +17,7 @@ if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 else:
     logger.warning("No .env file found, proceeding with system environment variables")
+
 
 def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""

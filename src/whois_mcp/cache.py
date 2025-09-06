@@ -1,13 +1,14 @@
 from collections import OrderedDict
-from typing import TypeVar, Optional, Any
+from typing import TypeVar, Optional
 import time
 
-K = TypeVar('K')
-V = TypeVar('V')
+K = TypeVar("K")
+V = TypeVar("V")
+
 
 class TTLCache:
     """A Least Recently Used (LRU) cache with Time-To-Live (TTL) expiration."""
-    
+
     def __init__(self, max_items: int = 512, ttl_seconds: float = 60.0) -> None:
         """Initialize the cache with max items and TTL in seconds."""
         self._max_items: int = max_items
@@ -19,12 +20,12 @@ class TTLCache:
         item = self._data.get(key)
         if item is None:
             return None
-            
+
         timestamp, value = item
         if time.perf_counter() - timestamp > self._ttl:
             self._data.pop(key, None)
             return None
-            
+
         self._data.move_to_end(key)
         return value
 

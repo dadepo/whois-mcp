@@ -1,5 +1,6 @@
 import os
 
+
 def env_str(key: str, default: str) -> str:
     return os.environ.get(key, default)
 
