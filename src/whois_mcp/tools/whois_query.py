@@ -104,5 +104,10 @@ async def _whois_request(
 def register(mcp: FastMCP) -> None:
     mcp.tool(
         name="whois_query",
-        description="Perform a raw WHOIS query (port 43) and return RPSL text.",
+        description=(
+            "Perform raw WHOIS queries to get detailed object information in RPSL format. "
+            "Use for individual lookups of domains, IPs, ASNs, or routing objects. "
+            "Returns raw database records with all attributes."
+            " - For AS-SET expansion into complete ASN lists, use expand_as_set instead as it handles recursive resolution automatically."
+        ),
     )(_whois_request)
