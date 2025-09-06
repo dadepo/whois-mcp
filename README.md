@@ -11,34 +11,17 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 - **`contact_card`** - Fetch abuse, admin, and technical contacts
 
 
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/whois-mcp.git
-cd whois-mcp
-
-# Install with uv
-uv sync
-uv pip install -e .
-```
-
 ## Usage
 
-### As MCP Server
-```bash
-# Run the server
-python src/main.py
-```
+### With Claude Desktop (or any other MCP Client)
 
-### With Claude Desktop
 Add to your Claude Desktop configuration:
 ```json
 {
   "mcpServers": {
     "whois-mcp": {
-      "command": "python",
-      "args": ["/path/to/whois-mcp/src/main.py"]
+      "command": "/path/to/bin/uvx",
+      "args": ["--from", "git+https://github.com/dadepo/whois-mcp.git", "whois-mcp"]
     }
   }
 }
