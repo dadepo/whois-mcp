@@ -47,7 +47,9 @@ async def _search_route(prefix: str) -> tuple[dict[str, Any], str]:
     url = f"{RIPE_REST}/search.json?query-string={prefix}&type-filter={route_type}"
 
     async with httpx.AsyncClient(
-        timeout=HTTP_TIMEOUT_SECONDS, headers={"User-Agent": USER_AGENT}
+        timeout=HTTP_TIMEOUT_SECONDS,
+        headers={"User-Agent": USER_AGENT},
+        follow_redirects=True,
     ) as client:
         response = await client.get(url)
         response.raise_for_status()
