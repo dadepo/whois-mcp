@@ -1,7 +1,7 @@
 [project]
 name = "whois-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "MCP server providing network information lookup tools through WHOIS and RIPE Database queries"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
