@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 import time
-from typing import Annotated, Dict, List, Optional, Any
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -32,13 +32,13 @@ async def _whois_request(
         ),
     ],
     flags: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(
             default=None,
             description="Optional WHOIS flags to modify the query (e.g., ['-B'] for brief output, ['-r'] for raw output)",
         ),
     ] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Execute a WHOIS request and return the result in a structured format."""
     # Create cache key from query and flags
     cache_key = f"{query}|{','.join(flags or [])}"
@@ -61,7 +61,7 @@ async def _whois_request(
         writer.write(line.encode("utf-8"))
         await writer.drain()
 
-        chunks: List[bytes] = []
+        chunks: list[bytes] = []
         while True:
             chunk = await asyncio.wait_for(
                 reader.read(65536), WHOIS_READ_TIMEOUT_SECONDS
@@ -89,7 +89,7 @@ async def _whois_request(
 
         return result
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.error(f"WHOIS query for '{query}' timed out")
         return {
             "ok": False,

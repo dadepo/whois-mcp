@@ -1,12 +1,8 @@
-from collections import OrderedDict
-from typing import TypeVar, Optional, Generic
 import time
-
-K = TypeVar("K")
-V = TypeVar("V")
+from collections import OrderedDict
 
 
-class TTLCache(Generic[K, V]):
+class TTLCache[K, V]:
     """A Least Recently Used (LRU) cache with Time-To-Live (TTL) expiration."""
 
     def __init__(self, max_items: int = 512, ttl_seconds: float = 60.0) -> None:
@@ -15,7 +11,7 @@ class TTLCache(Generic[K, V]):
         self._ttl: float = ttl_seconds
         self._data: OrderedDict[K, tuple[float, V]] = OrderedDict()
 
-    def get(self, key: K) -> Optional[V]:
+    def get(self, key: K) -> V | None:
         """Retrieve a value from the cache by key."""
         item = self._data.get(key)
         if item is None:

@@ -1,8 +1,8 @@
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 # Configure logging
@@ -25,7 +25,7 @@ def register_tools(mcp: FastMCP) -> None:
     from whois_mcp.tools.whois_query import register as reg_whois
 
     # List of registration functions
-    tool_registrations: List[Callable[[FastMCP], None]] = [
+    tool_registrations: list[Callable[[FastMCP], None]] = [
         reg_whois,
     ]
 
