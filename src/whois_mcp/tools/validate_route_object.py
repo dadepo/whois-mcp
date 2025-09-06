@@ -144,6 +144,25 @@ async def _validate_route_object_request(
         )
         return result
 
+    except httpx.HTTPStatusError as e:
+        # Handle 404 as "not found" rather than an error
+        if e.response.status_code == 404:
+            logger.info(f"No route objects found for '{prefix}' (404 response)")
+            result: dict[str, Any] = {
+                "ok": True,
+                "data": {
+                    "state": "not-found",
+                    "matches": [],
+                    "prefix": prefix,
+                    "origin_asn": origin_asn,
+                },
+            }
+            # Cache the not-found result
+            _route_cache.set(cache_key, result)
+            return result
+        else:
+            logger.error(f"HTTP error during route search for '{prefix}': {str(e)}")
+            return {"ok": False, "error": "http_error", "detail": str(e)}
     except httpx.HTTPError as e:
         logger.error(f"HTTP error during route search for '{prefix}': {str(e)}")
         return {"ok": False, "error": "http_error", "detail": str(e)}
