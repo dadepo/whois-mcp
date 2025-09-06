@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 import time
-from typing import Annotated, Dict, List, Optional, Union
+from typing import Annotated, Dict, List, Optional, Any
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -21,7 +21,7 @@ __all__ = ["register"]
 logger = logging.getLogger(__name__)
 
 # Initialize cache with 5-minute TTL for WHOIS results
-_whois_cache = TTLCache(max_items=1000, ttl_seconds=300.0)
+_whois_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
 
 async def _whois_request(
@@ -38,7 +38,7 @@ async def _whois_request(
             description="Optional WHOIS flags to modify the query (e.g., ['-B'] for brief output, ['-r'] for raw output)",
         ),
     ] = None,
-) -> Dict[str, Union[bool, str, Dict[str, Union[str, int]]]]:
+) -> Dict[str, Any]:
     """Execute a WHOIS request and return the result in a structured format."""
     # Create cache key from query and flags
     cache_key = f"{query}|{','.join(flags or [])}"

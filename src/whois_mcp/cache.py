@@ -1,12 +1,12 @@
 from collections import OrderedDict
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Generic
 import time
 
 K = TypeVar("K")
 V = TypeVar("V")
 
 
-class TTLCache:
+class TTLCache(Generic[K, V]):
     """A Least Recently Used (LRU) cache with Time-To-Live (TTL) expiration."""
 
     def __init__(self, max_items: int = 512, ttl_seconds: float = 60.0) -> None:

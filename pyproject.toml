@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.28.1",
     "mcp[cli]>=1.0.0",
     "pydantic>=2.0.0",
+    "pyright>=1.1.405",
 ]
 
 [dependency-groups]
@@ -16,3 +17,14 @@ dev = [
     "pytest>=8.4.1",
     "ruff>=0.12.12",
 ]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+    "src/experimental",
+    "src/typestubs"
+]
+
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
