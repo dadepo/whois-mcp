@@ -10,6 +10,9 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 - **`validate_route_object`** - Check IRR route/route6 object existence
 - **`contact_card`** - Fetch abuse, admin, and technical contacts
 
+### Regional Internet Registry (RIR) Support
+
+Currently, this MCP server is primarily optimized for **RIPE NCC** (Europe/Middle East/Central Asia) resources and databases. Support for other Regional Internet Registries is planned.
 
 ## Usage
 
