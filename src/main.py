@@ -1,4 +1,10 @@
 from whois_mcp.server import app
 
-if __name__ == "__main__":
+
+def main() -> None:
+    """Main entry point for the MCP server."""
     app.run()
+
+
+if __name__ == "__main__":
+    main()
