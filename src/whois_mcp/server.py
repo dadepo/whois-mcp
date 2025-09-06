@@ -23,12 +23,14 @@ def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""
     # Import tool registration functions
     from whois_mcp.tools.expand_as_set import register as reg_expand_as_set
+    from whois_mcp.tools.validate_route_object import register as reg_validate_route
     from whois_mcp.tools.whois_query import register as reg_whois
 
     # List of registration functions
     tool_registrations: list[Callable[[FastMCP], None]] = [
         reg_whois,
         reg_expand_as_set,
+        reg_validate_route,
     ]
 
     # Register each tool
