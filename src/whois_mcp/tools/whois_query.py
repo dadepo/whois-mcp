@@ -23,20 +23,34 @@ logger = logging.getLogger(__name__)
 # Initialize cache with 5-minute TTL for WHOIS results
 _whois_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
+# Tool metadata constants
+TOOL_NAME = "whois_query"
+TOOL_DESCRIPTION = (
+    "Perform raw WHOIS queries to get complete object information in RPSL format. "
+    "Use ONLY when you need full object details, contact information, or administrative data. "
+    "DO NOT use for route validation - use validate_route_object for checking if route objects exist. "
+    "DO NOT use for AS-SET expansion - use expand_as_set for getting ASN lists. "
+    "This returns raw database records with all attributes for detailed analysis."
+)
+
+QUERY_DESCRIPTION = (
+    "The domain name, IP address, ASN, or other identifier to query via WHOIS. "
+    "Examples: 'example.com', '192.0.2.1', 'AS64496', 'RIPE-NCC-HM-MNT'. "
+    "Returns complete object details from the WHOIS database."
+)
+
+FLAGS_DESCRIPTION = (
+    "Optional WHOIS flags to modify the query behavior. Common flags: "
+    "['-B'] for brief output (less verbose), ['-r'] for raw output (no filtering), "
+    "['-T', 'person'] to limit object types. Use empty list [] or null for default query."
+)
+
 
 async def _whois_request(
-    query: Annotated[
-        str,
-        Field(
-            description="The domain name, IP address, or other identifier to query via WHOIS"
-        ),
-    ],
+    query: Annotated[str, Field(description=QUERY_DESCRIPTION)],
     flags: Annotated[
         list[str] | None,
-        Field(
-            default=None,
-            description="Optional WHOIS flags to modify the query (e.g., ['-B'] for brief output, ['-r'] for raw output)",
-        ),
+        Field(default=None, description=FLAGS_DESCRIPTION),
     ] = None,
 ) -> dict[str, Any]:
     """Execute a WHOIS request and return the result in a structured format."""
@@ -103,11 +117,6 @@ async def _whois_request(
 
 def register(mcp: FastMCP) -> None:
     mcp.tool(
-        name="whois_query",
-        description=(
-            "Perform raw WHOIS queries to get detailed object information in RPSL format. "
-            "Use for individual lookups of domains, IPs, ASNs, or routing objects. "
-            "Returns raw database records with all attributes."
-            " - For AS-SET expansion into complete ASN lists, use expand_as_set instead as it handles recursive resolution automatically."
-        ),
+        name=TOOL_NAME,
+        description=TOOL_DESCRIPTION,
     )(_whois_request)

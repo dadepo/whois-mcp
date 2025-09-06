@@ -16,6 +16,24 @@ logger = logging.getLogger(__name__)
 # Initialize cache with 5-minute TTL for AS-SET results
 _as_set_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
+# Tool metadata constants
+TOOL_NAME = "expand_as_set"
+TOOL_DESCRIPTION = (
+    "Efficiently expand AS-SET objects into complete lists of concrete ASNs. "
+    "Use this instead of whois_query when you need ALL ASNs from an AS-SET, "
+    "as it automatically handles recursive expansion, deduplication, and cycle detection. "
+    "A single AS-SET like 'AS-RETN' may contain hundreds of nested AS-SETs and ASNs - "
+    "this tool flattens the entire hierarchy in one call, returning a sorted list "
+    "with count metadata. Perfect for network analysis, route filtering, and policy generation."
+)
+
+SETNAME_DESCRIPTION = (
+    "AS-SET name to recursively expand into concrete ASN numbers. "
+    "Examples: 'AS-CLOUDFLARE', 'AS-GOOGLE', 'AS-RETN'. "
+    "The tool will automatically resolve all nested AS-SETs and return a complete "
+    "list of individual ASNs contained within the hierarchy."
+)
+
 
 async def _get_json(url: str) -> dict[str, Any]:
     """Fetch JSON data from the specified URL."""
@@ -83,12 +101,7 @@ async def _expand_as_set_recursive(
 
 
 async def _expand_as_set_request(
-    setname: Annotated[
-        str,
-        Field(
-            description="AS-SET name to expand (e.g., 'AS-CLOUDFLARE', 'AS-GOOGLE', 'AS-RETN')"
-        ),
-    ],
+    setname: Annotated[str, Field(description=SETNAME_DESCRIPTION)],
 ) -> dict[str, Any]:
     """
     Expand an AS-SET into all concrete ASNs and return the result in a structured format.
@@ -134,13 +147,6 @@ async def _expand_as_set_request(
 def register(mcp: FastMCP) -> None:
     """Register the expand_as_set tool with the MCP server."""
     mcp.tool(
-        name="expand_as_set",
-        description=(
-            "Efficiently expand AS-SET objects into complete lists of concrete ASNs. "
-            "Use this instead of whois_query when you need ALL ASNs from an AS-SET, "
-            "as it automatically handles recursive expansion, deduplication, and cycle detection. "
-            "A single AS-SET like 'AS-RETN' may contain hundreds of nested AS-SETs and ASNs - "
-            "this tool flattens the entire hierarchy in one call, returning a sorted list "
-            "with count metadata. Perfect for network analysis, route filtering, and policy generation."
-        ),
+        name=TOOL_NAME,
+        description=TOOL_DESCRIPTION,
     )(_expand_as_set_request)
