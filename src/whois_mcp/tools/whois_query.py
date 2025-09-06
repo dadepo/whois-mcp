@@ -110,6 +110,13 @@ async def _whois_request(
             "error": "timeout_error",
             "detail": "Connection or read timeout",
         }
+    except (ConnectionError, OSError) as e:
+        logger.error(f"Network error for WHOIS query '{query}': {str(e)}")
+        return {
+            "ok": False,
+            "error": "network_error",
+            "detail": f"Network connection failed: {str(e)}",
+        }
     except Exception as e:
         logger.error(f"WHOIS query for '{query}' failed: {str(e)}")
         return {"ok": False, "error": "whois_error", "detail": str(e)}
