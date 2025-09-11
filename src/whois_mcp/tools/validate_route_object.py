@@ -3,7 +3,8 @@ import logging
 from typing import Annotated, Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.session import ServerSession
 from pydantic import Field
 
 from whois_mcp.cache import TTLCache
@@ -59,6 +60,7 @@ async def _search_route(prefix: str) -> tuple[dict[str, Any], str]:
 async def _validate_route_object_request(
     prefix: Annotated[str, Field(description=PREFIX_DESCRIPTION)],
     origin_asn: Annotated[int, Field(description=ORIGIN_ASN_DESCRIPTION)],
+    ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """
     Validate IRR route/route6 coverage for a specific prefix-ASN combination.
@@ -75,6 +77,9 @@ async def _validate_route_object_request(
 
     Returns: {"ok": true, "data": {"state": "exists|not-found", "matches": [...], "prefix": "...", "origin_asn": N}}
     """
+    # Log the incoming request
+    await ctx.info(f"Starting route validation for prefix '{prefix}' origin AS{origin_asn}")
+    
     # Create cache key from prefix and ASN
     cache_key = f"route:{prefix}|{origin_asn}"
 
@@ -82,13 +87,16 @@ async def _validate_route_object_request(
     cached_result = _route_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"Route validation for '{prefix}' AS{origin_asn} served from cache")
+        await ctx.info(f"Route validation for '{prefix}' AS{origin_asn} served from cache")
         return cached_result
 
     try:
         # Validate prefix format
         ipaddress.ip_network(prefix, strict=False)
     except Exception as e:
-        logger.error(f"Invalid prefix format '{prefix}': {str(e)}")
+        error_msg = f"Invalid prefix format '{prefix}': {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"Route validation failed: {error_msg}")
         return {"ok": False, "error": "invalid_prefix", "detail": str(e)}
 
     try:
@@ -144,12 +152,19 @@ async def _validate_route_object_request(
             f"Route validation for '{prefix}' AS{origin_asn} completed: "
             f"{len(matches)} matches found"
         )
+        
+        # Log successful completion via MCP context
+        state = result["data"]["state"]
+        match_count = len(matches)
+        await ctx.info(f"Route validation completed: {state} ({match_count} matches found for '{prefix}' AS{origin_asn})")
+        
         return result
 
     except httpx.HTTPStatusError as e:
         # Handle 404 as "not found" rather than an error
         if e.response.status_code == 404:
             logger.info(f"No route objects found for '{prefix}' (404 response)")
+            await ctx.info(f"Route validation completed: not-found (no route objects exist for '{prefix}')")
             result: dict[str, Any] = {
                 "ok": True,
                 "data": {
@@ -163,13 +178,19 @@ async def _validate_route_object_request(
             _route_cache.set(cache_key, result)
             return result
         else:
-            logger.error(f"HTTP error during route search for '{prefix}': {str(e)}")
+            error_msg = f"HTTP error during route search for '{prefix}': {str(e)}"
+            logger.error(error_msg)
+            await ctx.error(f"Route validation failed: {error_msg}")
             return {"ok": False, "error": "http_error", "detail": str(e)}
     except httpx.HTTPError as e:
-        logger.error(f"HTTP error during route search for '{prefix}': {str(e)}")
+        error_msg = f"HTTP error during route search for '{prefix}': {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"Route validation failed: {error_msg}")
         return {"ok": False, "error": "http_error", "detail": str(e)}
     except Exception as e:
-        logger.error(f"Route validation for '{prefix}' AS{origin_asn} failed: {str(e)}")
+        error_msg = f"Route validation for '{prefix}' AS{origin_asn} failed: {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"Route validation failed: {error_msg}")
         return {"ok": False, "error": "validation_error", "detail": str(e)}
 
 
