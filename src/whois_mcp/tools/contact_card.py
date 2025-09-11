@@ -6,7 +6,8 @@ import logging
 from typing import Annotated, Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.session import ServerSession
 from pydantic import Field
 
 from ..cache import TTLCache
@@ -73,6 +74,7 @@ async def _contact_card_request(
     ip: Annotated[str | None, Field(description=IP_DESCRIPTION)] = None,
     asn: Annotated[int | None, Field(description=ASN_DESCRIPTION)] = None,
     org: Annotated[str | None, Field(description=ORG_DESCRIPTION)] = None,
+    ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """
     Retrieve comprehensive contact information for IP addresses, ASNs, or organizations.
@@ -93,6 +95,7 @@ async def _contact_card_request(
     # Validate input parameters
     provided_params = sum(1 for param in [ip, asn, org] if param is not None)
     if provided_params != 1:
+        await ctx.error("Contact card request failed: Provide exactly one of ip, asn, or org")
         return {
             "ok": False,
             "error": "bad_request",
@@ -113,10 +116,14 @@ async def _contact_card_request(
         query_type = "org"
         query_value = org
 
+    # Log the incoming request
+    await ctx.info(f"Starting contact card lookup for {query_type}='{query_value}'")
+
     # Check cache first
     cached_result = _contact_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"Contact card for {query_type}='{query_value}' served from cache")
+        await ctx.info(f"Contact card for {query_type}='{query_value}' served from cache")
         return cached_result
 
     try:
@@ -262,15 +269,26 @@ async def _contact_card_request(
 
         # Cache the result
         _contact_cache.set(cache_key, result)
+        
+        # Log successful completion via MCP context
+        org_name = result["data"]["organization"]["name"]
+        abuse_available = "available" if result["data"]["abuse"] else "not available"
+        admin_count = len(result["data"]["admin_contacts"])
+        tech_count = len(result["data"]["tech_contacts"])
+        await ctx.info(
+            f"Contact card completed: found '{org_name}' (abuse: {abuse_available}, "
+            f"admin: {admin_count}, tech: {tech_count} contacts)"
+        )
+        
         logger.info(
             f"Contact card lookup for {query_type}='{query_value}' completed successfully"
         )
         return result
 
     except Exception as e:
-        logger.error(
-            f"Contact card lookup for {query_type}='{query_value}' failed: {str(e)}"
-        )
+        error_msg = f"Contact card lookup for {query_type}='{query_value}' failed: {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"Contact card lookup failed: {error_msg}")
         return {"ok": False, "error": "lookup_error", "detail": str(e)}
 
 
