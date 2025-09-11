@@ -4,7 +4,8 @@ import logging
 import time
 from typing import Annotated, Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.session import ServerSession
 from pydantic import Field
 
 from whois_mcp.cache import TTLCache
@@ -48,6 +49,7 @@ FLAGS_DESCRIPTION = (
 
 async def _whois_request(
     query: Annotated[str, Field(description=QUERY_DESCRIPTION)],
+    ctx: Context[ServerSession, None],
     flags: Annotated[
         list[str] | None,
         Field(default=None, description=FLAGS_DESCRIPTION),
@@ -56,11 +58,15 @@ async def _whois_request(
     """Execute a WHOIS request and return the result in a structured format."""
     # Create cache key from query and flags
     cache_key = f"{query}|{','.join(flags or [])}"
+    
+    # Log the incoming request
+    await ctx.info(f"Starting WHOIS query for '{query}'" + (f" with flags {flags}" if flags else ""))
 
     # Check cache first
     cached_result = _whois_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"WHOIS query for '{query}' served from cache")
+        await ctx.info(f"WHOIS query for '{query}' served from cache")
         return cached_result
 
     line = (" ".join(flags or []) + " " + query).strip() + "\r\n"
@@ -92,6 +98,9 @@ async def _whois_request(
         latency_ms = int((time.perf_counter() - start) * 1000)
 
         logger.info(f"WHOIS query for '{query}' completed in {latency_ms}ms")
+        
+        # Log successful completion via MCP context
+        await ctx.info(f"WHOIS query for '{query}' completed successfully in {latency_ms}ms (server: {WHOIS_SERVER})")
 
         result = {
             "ok": True,
@@ -104,21 +113,27 @@ async def _whois_request(
         return result
 
     except TimeoutError:
-        logger.error(f"WHOIS query for '{query}' timed out")
+        error_msg = f"WHOIS query for '{query}' timed out"
+        logger.error(error_msg)
+        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
         return {
             "ok": False,
             "error": "timeout_error",
             "detail": "Connection or read timeout",
         }
     except (ConnectionError, OSError) as e:
-        logger.error(f"Network error for WHOIS query '{query}': {str(e)}")
+        error_msg = f"Network error for WHOIS query '{query}': {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
         return {
             "ok": False,
             "error": "network_error",
             "detail": f"Network connection failed: {str(e)}",
         }
     except Exception as e:
-        logger.error(f"WHOIS query for '{query}' failed: {str(e)}")
+        error_msg = f"WHOIS query for '{query}' failed: {str(e)}"
+        logger.error(error_msg)
+        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
         return {"ok": False, "error": "whois_error", "detail": str(e)}
 
 
