@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Annotated, Any
 
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.session import ServerSession
 from pydantic import Field
 
@@ -59,9 +59,12 @@ async def _whois_request(
     """Execute a WHOIS request and return the result in a structured format."""
     # Create cache key from query and flags
     cache_key = f"{query}|{','.join(flags or [])}"
-    
+
     # Log the incoming request
-    await ctx.info(f"Starting WHOIS query for '{query}'" + (f" with flags {flags}" if flags else ""))
+    await ctx.info(
+        f"Starting WHOIS query for '{query}'"
+        + (f" with flags {flags}" if flags else "")
+    )
 
     # Check cache first
     cached_result = _whois_cache.get(cache_key)
@@ -99,9 +102,11 @@ async def _whois_request(
         latency_ms = int((time.perf_counter() - start) * 1000)
 
         logger.info(f"WHOIS query for '{query}' completed in {latency_ms}ms")
-        
+
         # Log successful completion via MCP context
-        await ctx.info(f"WHOIS query for '{query}' completed successfully in {latency_ms}ms (server: {WHOIS_SERVER})")
+        await ctx.info(
+            f"WHOIS query for '{query}' completed successfully in {latency_ms}ms (server: {WHOIS_SERVER})"
+        )
 
         result = {
             "ok": True,

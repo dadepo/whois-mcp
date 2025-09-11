@@ -3,7 +3,7 @@ import logging
 from typing import Annotated, Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.session import ServerSession
 from pydantic import Field
 
@@ -78,8 +78,10 @@ async def _validate_route_object_request(
     Returns: {"ok": true, "data": {"state": "exists|not-found", "matches": [...], "prefix": "...", "origin_asn": N}}
     """
     # Log the incoming request
-    await ctx.info(f"Starting route validation for prefix '{prefix}' origin AS{origin_asn}")
-    
+    await ctx.info(
+        f"Starting route validation for prefix '{prefix}' origin AS{origin_asn}"
+    )
+
     # Create cache key from prefix and ASN
     cache_key = f"route:{prefix}|{origin_asn}"
 
@@ -87,7 +89,9 @@ async def _validate_route_object_request(
     cached_result = _route_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"Route validation for '{prefix}' AS{origin_asn} served from cache")
-        await ctx.info(f"Route validation for '{prefix}' AS{origin_asn} served from cache")
+        await ctx.info(
+            f"Route validation for '{prefix}' AS{origin_asn} served from cache"
+        )
         return cached_result
 
     try:
@@ -152,19 +156,23 @@ async def _validate_route_object_request(
             f"Route validation for '{prefix}' AS{origin_asn} completed: "
             f"{len(matches)} matches found"
         )
-        
+
         # Log successful completion via MCP context
         state = result["data"]["state"]
         match_count = len(matches)
-        await ctx.info(f"Route validation completed: {state} ({match_count} matches found for '{prefix}' AS{origin_asn})")
-        
+        await ctx.info(
+            f"Route validation completed: {state} ({match_count} matches found for '{prefix}' AS{origin_asn})"
+        )
+
         return result
 
     except httpx.HTTPStatusError as e:
         # Handle 404 as "not found" rather than an error
         if e.response.status_code == 404:
             logger.info(f"No route objects found for '{prefix}' (404 response)")
-            await ctx.info(f"Route validation completed: not-found (no route objects exist for '{prefix}')")
+            await ctx.info(
+                f"Route validation completed: not-found (no route objects exist for '{prefix}')"
+            )
             result: dict[str, Any] = {
                 "ok": True,
                 "data": {

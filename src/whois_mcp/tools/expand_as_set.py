@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Any
 
 import aiohttp
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.session import ServerSession
 from pydantic import Field
 
@@ -165,14 +165,18 @@ async def _expand_as_set_request(
     - Depth 11-20: Comprehensive, may be very slow for large AS-SETs like AS-RETN
     """
     # Log the incoming request
-    await ctx.info(f"Starting AS-SET expansion for '{setname}' with max_depth={max_depth}")
-    
+    await ctx.info(
+        f"Starting AS-SET expansion for '{setname}' with max_depth={max_depth}"
+    )
+
     # Check cache first
     cache_key = f"as_set:{setname}"
     cached_result = _as_set_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"AS-SET expansion for '{setname}' served from cache")
-        await ctx.info(f"AS-SET expansion for '{setname}' served from cache ({len(cached_result)} ASNs)")
+        await ctx.info(
+            f"AS-SET expansion for '{setname}' served from cache ({len(cached_result)} ASNs)"
+        )
         return {
             "ok": True,
             "data": {
@@ -190,7 +194,9 @@ async def _expand_as_set_request(
         # Check if the AS-SET was found (if seen contains only the original setname, it wasn't found)
         if len(asns) == 0 and len(seen) <= 1:
             logger.info(f"AS-SET '{setname}' not found or contains no ASNs")
-            await ctx.info(f"AS-SET expansion completed: not-found ('{setname}' does not exist or contains no ASNs)")
+            await ctx.info(
+                f"AS-SET expansion completed: not-found ('{setname}' does not exist or contains no ASNs)"
+            )
             result: dict[str, Any] = {
                 "ok": True,
                 "data": {
@@ -201,7 +207,9 @@ async def _expand_as_set_request(
                 },
             }
         else:
-            await ctx.info(f"AS-SET expansion completed: expanded (found {len(asns)} ASNs from '{setname}' at depth {max_depth})")
+            await ctx.info(
+                f"AS-SET expansion completed: expanded (found {len(asns)} ASNs from '{setname}' at depth {max_depth})"
+            )
             result = {
                 "ok": True,
                 "data": {
