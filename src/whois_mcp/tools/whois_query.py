@@ -49,11 +49,12 @@ FLAGS_DESCRIPTION = (
 
 async def _whois_request(
     query: Annotated[str, Field(description=QUERY_DESCRIPTION)],
-    ctx: Context[ServerSession, None],
     flags: Annotated[
         list[str] | None,
         Field(default=None, description=FLAGS_DESCRIPTION),
     ] = None,
+    *,
+    ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """Execute a WHOIS request and return the result in a structured format."""
     # Create cache key from query and flags

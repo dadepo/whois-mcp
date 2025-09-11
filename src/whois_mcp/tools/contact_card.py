@@ -74,6 +74,7 @@ async def _contact_card_request(
     ip: Annotated[str | None, Field(description=IP_DESCRIPTION)] = None,
     asn: Annotated[int | None, Field(description=ASN_DESCRIPTION)] = None,
     org: Annotated[str | None, Field(description=ORG_DESCRIPTION)] = None,
+    *,
     ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """

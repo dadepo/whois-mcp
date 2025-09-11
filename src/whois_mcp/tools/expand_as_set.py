@@ -140,6 +140,7 @@ async def _expand_as_set_request(
         int,
         Field(description=MAX_DEPTH_DESCRIPTION, ge=1, le=20),
     ] = 10,
+    *,
     ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """
