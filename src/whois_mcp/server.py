@@ -22,23 +22,27 @@ else:
 def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""
     from whois_mcp.config import SUPPORT_RIPE
-    
+
     tool_registrations: list[Callable[[FastMCP], None]] = []
-    
+
     # Register RIPE tools if enabled
     if SUPPORT_RIPE:
         logger.info("RIPE NCC support enabled - registering RIPE tools")
         from whois_mcp.tools.ripe.contact_card import register as reg_contact_card
         from whois_mcp.tools.ripe.expand_as_set import register as reg_expand_as_set
-        from whois_mcp.tools.ripe.validate_route_object import register as reg_validate_route
+        from whois_mcp.tools.ripe.validate_route_object import (
+            register as reg_validate_route,
+        )
         from whois_mcp.tools.ripe.whois_query import register as reg_whois
 
-        tool_registrations.extend([
-            reg_whois,
-            reg_expand_as_set,
-            reg_validate_route,
-            reg_contact_card,
-        ])
+        tool_registrations.extend(
+            [
+                reg_whois,
+                reg_expand_as_set,
+                reg_validate_route,
+                reg_contact_card,
+            ]
+        )
     else:
         logger.info("RIPE NCC support disabled - skipping RIPE tools")
 

@@ -79,9 +79,13 @@ class TestSmokeTests:
 
     def test_tool_constants(self):
         """Test that tools have proper constant definitions."""
-        from whois_mcp.tools.ripe.contact_card import TOOL_DESCRIPTION as CONTACT_DESCRIPTION
+        from whois_mcp.tools.ripe.contact_card import (
+            TOOL_DESCRIPTION as CONTACT_DESCRIPTION,
+        )
         from whois_mcp.tools.ripe.contact_card import TOOL_NAME as CONTACT_TOOL_NAME
-        from whois_mcp.tools.ripe.expand_as_set import TOOL_DESCRIPTION as EXPAND_DESCRIPTION
+        from whois_mcp.tools.ripe.expand_as_set import (
+            TOOL_DESCRIPTION as EXPAND_DESCRIPTION,
+        )
         from whois_mcp.tools.ripe.expand_as_set import TOOL_NAME as EXPAND_TOOL_NAME
         from whois_mcp.tools.ripe.validate_route_object import (
             TOOL_DESCRIPTION as VALIDATE_DESCRIPTION,
@@ -89,7 +93,9 @@ class TestSmokeTests:
         from whois_mcp.tools.ripe.validate_route_object import (
             TOOL_NAME as VALIDATE_TOOL_NAME,
         )
-        from whois_mcp.tools.ripe.whois_query import TOOL_DESCRIPTION as WHOIS_DESCRIPTION
+        from whois_mcp.tools.ripe.whois_query import (
+            TOOL_DESCRIPTION as WHOIS_DESCRIPTION,
+        )
         from whois_mcp.tools.ripe.whois_query import TOOL_NAME as WHOIS_TOOL_NAME
 
         # All tool names should be strings
