@@ -28,7 +28,7 @@ class TestSmokeTests:
     def test_tool_imports(self):
         """Test that all tool modules can be imported without errors."""
         # These imports should not raise any exceptions
-        from whois_mcp.tools import (
+        from whois_mcp.tools.ripe import (
             contact_card,
             expand_as_set,
             validate_route_object,
@@ -65,13 +65,13 @@ class TestSmokeTests:
         from whois_mcp import config
 
         # Should have required configuration constants
-        assert hasattr(config, "RIPE_REST")
+        assert hasattr(config, "RIPE_REST_BASE")
         assert hasattr(config, "HTTP_TIMEOUT_SECONDS")
         assert hasattr(config, "USER_AGENT")
 
         # Values should be reasonable
-        assert isinstance(config.RIPE_REST, str)
-        assert config.RIPE_REST.startswith("http")
+        assert isinstance(config.RIPE_REST_BASE, str)
+        assert config.RIPE_REST_BASE.startswith("http")
         assert isinstance(config.HTTP_TIMEOUT_SECONDS, int | float)
         assert config.HTTP_TIMEOUT_SECONDS > 0
         assert isinstance(config.USER_AGENT, str)
@@ -79,18 +79,18 @@ class TestSmokeTests:
 
     def test_tool_constants(self):
         """Test that tools have proper constant definitions."""
-        from whois_mcp.tools.contact_card import TOOL_DESCRIPTION as CONTACT_DESCRIPTION
-        from whois_mcp.tools.contact_card import TOOL_NAME as CONTACT_TOOL_NAME
-        from whois_mcp.tools.expand_as_set import TOOL_DESCRIPTION as EXPAND_DESCRIPTION
-        from whois_mcp.tools.expand_as_set import TOOL_NAME as EXPAND_TOOL_NAME
-        from whois_mcp.tools.validate_route_object import (
+        from whois_mcp.tools.ripe.contact_card import TOOL_DESCRIPTION as CONTACT_DESCRIPTION
+        from whois_mcp.tools.ripe.contact_card import TOOL_NAME as CONTACT_TOOL_NAME
+        from whois_mcp.tools.ripe.expand_as_set import TOOL_DESCRIPTION as EXPAND_DESCRIPTION
+        from whois_mcp.tools.ripe.expand_as_set import TOOL_NAME as EXPAND_TOOL_NAME
+        from whois_mcp.tools.ripe.validate_route_object import (
             TOOL_DESCRIPTION as VALIDATE_DESCRIPTION,
         )
-        from whois_mcp.tools.validate_route_object import (
+        from whois_mcp.tools.ripe.validate_route_object import (
             TOOL_NAME as VALIDATE_TOOL_NAME,
         )
-        from whois_mcp.tools.whois_query import TOOL_DESCRIPTION as WHOIS_DESCRIPTION
-        from whois_mcp.tools.whois_query import TOOL_NAME as WHOIS_TOOL_NAME
+        from whois_mcp.tools.ripe.whois_query import TOOL_DESCRIPTION as WHOIS_DESCRIPTION
+        from whois_mcp.tools.ripe.whois_query import TOOL_NAME as WHOIS_TOOL_NAME
 
         # All tool names should be strings
         assert isinstance(CONTACT_TOOL_NAME, str)
@@ -120,10 +120,10 @@ class TestSmokeTests:
 
     def test_individual_tool_registration(self):
         """Test that each tool can be registered individually."""
-        from whois_mcp.tools.contact_card import register as reg_contact
-        from whois_mcp.tools.expand_as_set import register as reg_expand
-        from whois_mcp.tools.validate_route_object import register as reg_validate
-        from whois_mcp.tools.whois_query import register as reg_whois
+        from whois_mcp.tools.ripe.contact_card import register as reg_contact
+        from whois_mcp.tools.ripe.expand_as_set import register as reg_expand
+        from whois_mcp.tools.ripe.validate_route_object import register as reg_validate
+        from whois_mcp.tools.ripe.whois_query import register as reg_whois
 
         # Each tool should be able to register with a fresh MCP instance
         for register_func in [reg_contact, reg_expand, reg_validate, reg_whois]:
