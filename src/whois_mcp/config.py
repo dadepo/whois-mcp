@@ -12,10 +12,24 @@ def env_int(key: str, default: int) -> int:
         return default
 
 
-WHOIS_SERVER = env_str("WHOIS_SERVER", "whois.ripe.net")
-WHOIS_PORT = env_int("WHOIS_PORT", 43)
-RIPE_REST = env_str("RIPE_REST", "https://rest.db.ripe.net")
-RDAP_BASE = env_str("RDAP_BASE", "https://rdap.db.ripe.net")
+def env_bool(key: str, default: bool) -> bool:
+    """Parse boolean environment variable. Accepts: true/false, 1/0, yes/no (case insensitive)"""
+    value = os.environ.get(key, "").lower().strip()
+    if not value:
+        return default
+    return value in ("true", "1", "yes", "on")
+
+
+# RIR Support Configuration
+SUPPORT_RIPE = env_bool("SUPPORT_RIPE", True)
+
+# RIPE NCC Endpoints
+RIPE_WHOIS_SERVER = "whois.ripe.net"
+RIPE_WHOIS_PORT = 43
+RIPE_REST_BASE = "https://rest.db.ripe.net"
+RIPE_RDAP_BASE = "https://rdap.db.ripe.net"
+
+# General Configuration
 HTTP_TIMEOUT_SECONDS = env_int("HTTP_TIMEOUT_SECONDS", 10)
 WHOIS_CONNECT_TIMEOUT_SECONDS = env_int("WHOIS_CONNECT_TIMEOUT_SECONDS", 5)
 WHOIS_READ_TIMEOUT_SECONDS = env_int("WHOIS_READ_TIMEOUT_SECONDS", 5)

@@ -60,15 +60,26 @@ Add to your Claude Desktop configuration:
 
 Environment variables (optional):
 ```bash
-# Custom RIPE REST API endpoint
-RIPE_REST="https://rest.db.ripe.net"
+# Enable/disable RIPE NCC support (default: true)
+SUPPORT_RIPE=true
 
-# HTTP timeout in seconds
-HTTP_TIMEOUT_SECONDS=30
+# General Configuration
+HTTP_TIMEOUT_SECONDS=10
+WHOIS_CONNECT_TIMEOUT_SECONDS=5
+WHOIS_READ_TIMEOUT_SECONDS=5
+CACHE_TTL_SECONDS=60
+CACHE_MAX_ITEMS=512
 
 # Custom User-Agent string
 USER_AGENT="whois-mcp/1.0"
 ```
+
+### RIR Support Control
+
+- **`SUPPORT_RIPE=true`** (default): Enables RIPE NCC queries using hardcoded endpoints (`whois.ripe.net`, `https://rest.db.ripe.net`)
+- **`SUPPORT_RIPE=false`**: Disables RIPE NCC queries entirely
+
+RIPE endpoints are hardcoded for reliability. This is the foundation for supporting multiple RIRs - in future versions, you'll be able to enable specific RIRs like ARIN, APNIC, LACNIC, and AFRINIC as needed.
 
 ## License
 

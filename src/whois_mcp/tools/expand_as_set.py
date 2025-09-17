@@ -7,7 +7,7 @@ from mcp.server.session import ServerSession
 from pydantic import Field
 
 from whois_mcp.cache import TTLCache
-from whois_mcp.config import HTTP_TIMEOUT_SECONDS, RIPE_REST, USER_AGENT
+from whois_mcp.config import HTTP_TIMEOUT_SECONDS, RIPE_REST_BASE, USER_AGENT
 
 __all__ = ["register"]
 
@@ -105,7 +105,7 @@ async def _expand_as_set_recursive(
         return
 
     try:
-        url = f"{RIPE_REST}/ripe/as-set/{setname}.json"
+        url = f"{RIPE_REST_BASE}/ripe/as-set/{setname}.json"
         data = await _get_json(url)
         objects = data.get("objects", {}).get("object", [])
         if not objects:

@@ -8,7 +8,7 @@ from mcp.server.session import ServerSession
 from pydantic import Field
 
 from whois_mcp.cache import TTLCache
-from whois_mcp.config import HTTP_TIMEOUT_SECONDS, RIPE_REST, USER_AGENT
+from whois_mcp.config import HTTP_TIMEOUT_SECONDS, RIPE_REST_BASE, USER_AGENT
 
 __all__ = ["register"]
 
@@ -45,7 +45,7 @@ ORIGIN_ASN_DESCRIPTION = (
 async def _search_route(prefix: str) -> tuple[dict[str, Any], str]:
     """Search for route objects matching the given prefix."""
     route_type = "route6" if ":" in prefix else "route"
-    url = f"{RIPE_REST}/search.json?query-string={prefix}&type-filter={route_type}"
+    url = f"{RIPE_REST_BASE}/search.json?query-string={prefix}&type-filter={route_type}"
 
     async with httpx.AsyncClient(
         timeout=HTTP_TIMEOUT_SECONDS,

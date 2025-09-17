@@ -11,7 +11,7 @@ from mcp.server.session import ServerSession
 from pydantic import Field
 
 from ..cache import TTLCache
-from ..config import HTTP_TIMEOUT_SECONDS, RIPE_REST, USER_AGENT
+from ..config import HTTP_TIMEOUT_SECONDS, RIPE_REST_BASE, USER_AGENT
 
 __all__ = ["register"]
 
@@ -138,11 +138,11 @@ async def _contact_card_request(
             if ip:
                 logger.info(f"Looking up organization for IP: {ip}")
                 data = await _get_json(
-                    f"{RIPE_REST}/search.json?query-string={ip}&type-filter=inetnum&type-filter=inet6num"
+                    f"{RIPE_REST_BASE}/search.json?query-string={ip}&type-filter=inetnum&type-filter=inet6num"
                 )
             elif asn is not None:
                 logger.info(f"Looking up organization for ASN: {asn}")
-                data = await _get_json(f"{RIPE_REST}/ripe/aut-num/AS{asn}.json")
+                data = await _get_json(f"{RIPE_REST_BASE}/ripe/aut-num/AS{asn}.json")
             else:
                 # This should never happen due to input validation, but ensures data is bound
                 return {
@@ -179,7 +179,7 @@ async def _contact_card_request(
 
         # Fetch organization details
         logger.info(f"Fetching organization details for: {org_key}")
-        org_data = await _get_json(f"{RIPE_REST}/ripe/organisation/{org_key}.json")
+        org_data = await _get_json(f"{RIPE_REST_BASE}/ripe/organisation/{org_key}.json")
         org_objs = org_data.get("objects", {}).get("object", [])
 
         if not org_objs:
@@ -205,7 +205,9 @@ async def _contact_card_request(
         if abuse_c:
             logger.info(f"Fetching abuse contact details for: {abuse_c}")
             try:
-                abuse_data = await _get_json(f"{RIPE_REST}/ripe/role/{abuse_c}.json")
+                abuse_data = await _get_json(
+                    f"{RIPE_REST_BASE}/ripe/role/{abuse_c}.json"
+                )
                 abuse_objs = abuse_data.get("objects", {}).get("object", [])
                 if abuse_objs:
                     abuse_obj = abuse_objs[0]
@@ -234,7 +236,7 @@ async def _contact_card_request(
                         f"Fetching {contact_type} contact details for: {handle}"
                     )
                     contact_data = await _get_json(
-                        f"{RIPE_REST}/ripe/person/{handle}.json"
+                        f"{RIPE_REST_BASE}/ripe/person/{handle}.json"
                     )
                     contact_objs = contact_data.get("objects", {}).get("object", [])
                     if contact_objs:

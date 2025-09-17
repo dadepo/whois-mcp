@@ -10,10 +10,11 @@ from pydantic import Field
 
 from whois_mcp.cache import TTLCache
 from whois_mcp.config import (
+    RIPE_WHOIS_PORT,
+    RIPE_WHOIS_SERVER,
+    SUPPORT_RIPE,
     WHOIS_CONNECT_TIMEOUT_SECONDS,
-    WHOIS_PORT,
     WHOIS_READ_TIMEOUT_SECONDS,
-    WHOIS_SERVER,
 )
 
 __all__ = ["register"]
@@ -24,6 +25,19 @@ logger = logging.getLogger(__name__)
 # Initialize cache with 5-minute TTL for WHOIS results
 _whois_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
+
+def _get_whois_config() -> tuple[str, int]:
+    """Get the appropriate WHOIS server and port based on RIR support configuration."""
+    if SUPPORT_RIPE:
+        return RIPE_WHOIS_SERVER, RIPE_WHOIS_PORT
+    else:
+        # When RIPE is disabled, no other RIRs are supported yet
+        # This will be expanded when other RIRs are added
+        raise RuntimeError(
+            "No RIR support enabled. Set SUPPORT_RIPE=true to enable RIPE NCC queries."
+        )
+
+
 # Tool metadata constants
 TOOL_NAME = "whois_query"
 TOOL_DESCRIPTION = (
@@ -31,7 +45,8 @@ TOOL_DESCRIPTION = (
     "Use ONLY when you need full object details, contact information, or administrative data. "
     "DO NOT use for route validation - use validate_route_object for checking if route objects exist. "
     "DO NOT use for AS-SET expansion - use expand_as_set for getting ASN lists. "
-    "This returns raw database records with all attributes for detailed analysis."
+    "This returns raw database records with all attributes for detailed analysis. "
+    "Uses RIPE database when SUPPORT_RIPE is enabled."
 )
 
 QUERY_DESCRIPTION = (
@@ -57,6 +72,17 @@ async def _whois_request(
     ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """Execute a WHOIS request and return the result in a structured format."""
+
+    # Check if RIPE support is enabled
+    if not SUPPORT_RIPE:
+        error_msg = "WHOIS queries are currently disabled (SUPPORT_RIPE=false)"
+        logger.warning(error_msg)
+        await ctx.error(error_msg)
+        return {
+            "ok": False,
+            "error": "service_disabled",
+            "detail": "RIPE WHOIS support is disabled. Set SUPPORT_RIPE=true to enable.",
+        }
     # Create cache key from query and flags
     cache_key = f"{query}|{','.join(flags or [])}"
 
@@ -76,9 +102,12 @@ async def _whois_request(
     line = (" ".join(flags or []) + " " + query).strip() + "\r\n"
     start = time.perf_counter()
 
+    # Get appropriate WHOIS server configuration
+    whois_server, whois_port = _get_whois_config()
+
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(WHOIS_SERVER, WHOIS_PORT),
+            asyncio.open_connection(whois_server, whois_port),
             WHOIS_CONNECT_TIMEOUT_SECONDS,
         )
 
@@ -105,12 +134,12 @@ async def _whois_request(
 
         # Log successful completion via MCP context
         await ctx.info(
-            f"WHOIS query for '{query}' completed successfully in {latency_ms}ms (server: {WHOIS_SERVER})"
+            f"WHOIS query for '{query}' completed successfully in {latency_ms}ms (server: {whois_server})"
         )
 
         result = {
             "ok": True,
-            "data": {"rpsl": rpsl, "server": WHOIS_SERVER, "latency_ms": latency_ms},
+            "data": {"rpsl": rpsl, "server": whois_server, "latency_ms": latency_ms},
         }
 
         # Cache the successful result
@@ -121,7 +150,7 @@ async def _whois_request(
     except TimeoutError:
         error_msg = f"WHOIS query for '{query}' timed out"
         logger.error(error_msg)
-        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
+        await ctx.error(f"{error_msg} (server: {whois_server})")
         return {
             "ok": False,
             "error": "timeout_error",
@@ -130,7 +159,7 @@ async def _whois_request(
     except (ConnectionError, OSError) as e:
         error_msg = f"Network error for WHOIS query '{query}': {str(e)}"
         logger.error(error_msg)
-        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
+        await ctx.error(f"{error_msg} (server: {whois_server})")
         return {
             "ok": False,
             "error": "network_error",
@@ -139,7 +168,7 @@ async def _whois_request(
     except Exception as e:
         error_msg = f"WHOIS query for '{query}' failed: {str(e)}"
         logger.error(error_msg)
-        await ctx.error(f"{error_msg} (server: {WHOIS_SERVER})")
+        await ctx.error(f"{error_msg} (server: {whois_server})")
         return {"ok": False, "error": "whois_error", "detail": str(e)}
 
 
