@@ -10,8 +10,8 @@ from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.session import ServerSession
 from pydantic import Field
 
-from ..cache import TTLCache
-from ..config import HTTP_TIMEOUT_SECONDS, RIPE_REST_BASE, USER_AGENT
+from ...cache import TTLCache
+from ...config import HTTP_TIMEOUT_SECONDS, RIPE_REST_BASE, USER_AGENT
 
 __all__ = ["register"]
 
