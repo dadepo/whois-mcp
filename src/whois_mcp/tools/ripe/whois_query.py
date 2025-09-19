@@ -41,18 +41,18 @@ def _get_whois_config() -> tuple[str, int]:
 # Tool metadata constants
 TOOL_NAME = "whois_query"
 TOOL_DESCRIPTION = (
-    "Perform raw WHOIS queries to get complete object information in RPSL format. "
-    "Use ONLY when you need full object details, contact information, or administrative data. "
+    "Perform raw WHOIS queries against the RIPE NCC database to get complete object information in RPSL format. "
+    "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
+    "Use ONLY when you need full object details, contact information, or administrative data from RIPE. "
     "DO NOT use for route validation - use validate_route_object for checking if route objects exist. "
     "DO NOT use for AS-SET expansion - use expand_as_set for getting ASN lists. "
-    "This returns raw database records with all attributes for detailed analysis. "
-    "Uses RIPE database when SUPPORT_RIPE is enabled."
+    "This returns raw RIPE database records with all attributes for detailed analysis."
 )
 
 QUERY_DESCRIPTION = (
-    "The domain name, IP address, ASN, or other identifier to query via WHOIS. "
+    "The domain name, IP address, ASN, or other identifier to query via RIPE WHOIS. "
     "Examples: 'example.com', '192.0.2.1', 'AS64496', 'RIPE-NCC-HM-MNT'. "
-    "Returns complete object details from the WHOIS database."
+    "Returns complete object details from the RIPE NCC database."
 )
 
 FLAGS_DESCRIPTION = (

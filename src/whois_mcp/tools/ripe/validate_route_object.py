@@ -21,18 +21,19 @@ _route_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 # Tool metadata constants
 TOOL_NAME = "validate_route_object"
 TOOL_DESCRIPTION = (
-    "PREFERRED TOOL for validating route object registration. Use this when you need to "
-    "CHECK, VERIFY, or VALIDATE if a route object exists for a prefix-ASN pair. "
+    "PREFERRED TOOL for validating route object registration in the RIPE NCC database. "
+    "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
+    "Use this when you need to CHECK, VERIFY, or VALIDATE if a route object exists for a prefix-ASN pair in RIPE. "
     "Keywords: 'route validation', 'check route', 'verify route', 'route exists', "
     "'BGP security', 'route filtering', 'IRR coverage', 'RPKI validation'. "
     "Automatically handles IPv4/IPv6 detection and returns simple exists/not-found status. "
-    "Much faster and more accurate than parsing raw WHOIS data for route validation."
+    "Much faster and more accurate than parsing raw WHOIS data for route validation in RIPE database."
 )
 
 PREFIX_DESCRIPTION = (
-    "IP prefix to CHECK/VALIDATE for route object registration. Use CIDR notation like "
+    "IP prefix to CHECK/VALIDATE for route object registration in RIPE database. Use CIDR notation like "
     "'192.0.2.0/24' for IPv4 or '2001:db8::/32' for IPv6. Use this when you need to "
-    "VERIFY if a prefix has a registered route object in the IRR database."
+    "VERIFY if a prefix has a registered route object in the RIPE IRR database."
 )
 
 ORIGIN_ASN_DESCRIPTION = (

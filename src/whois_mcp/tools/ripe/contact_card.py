@@ -23,15 +23,16 @@ _contact_cache: TTLCache[str, Any] = TTLCache(max_items=500, ttl_seconds=600.0)
 # Tool metadata constants
 TOOL_NAME = "contact_card"
 TOOL_DESCRIPTION = (
-    "Retrieve contact information (abuse, NOC, admin) for IP addresses, ASNs, or organizations. "
+    "Retrieve contact information (abuse, NOC, admin) for IP addresses, ASNs, or organizations from the RIPE NCC database. "
+    "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
     "Automatically resolves organization details and extracts abuse mailboxes, NOC contacts, "
     "phone numbers, and administrative information from RIPE database. Perfect for incident response, "
-    "network troubleshooting, and compliance reporting. Returns structured contact data with "
+    "network troubleshooting, and compliance reporting for RIPE-managed resources. Returns structured contact data with "
     "clear categorization of contact types and purposes."
 )
 
-IP_DESCRIPTION = "IP address to look up contact information for (IPv4 or IPv6)"
-ASN_DESCRIPTION = "ASN number to look up contact information for (without 'AS' prefix)"
+IP_DESCRIPTION = "IP address to look up contact information for in RIPE database (IPv4 or IPv6)"
+ASN_DESCRIPTION = "ASN number to look up contact information for in RIPE database (without 'AS' prefix)"
 ORG_DESCRIPTION = "Organization handle/key to look up contact information for directly"
 
 

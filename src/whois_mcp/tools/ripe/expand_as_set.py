@@ -20,20 +20,21 @@ _as_set_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 # Tool metadata constants
 TOOL_NAME = "expand_as_set"
 TOOL_DESCRIPTION = (
-    "Efficiently expand AS-SET objects into concrete ASNs with configurable depth. "
-    "Use this instead of whois_query when you need ASNs from an AS-SET. "
+    "Efficiently expand AS-SET objects from the RIPE NCC database into concrete ASNs with configurable depth. "
+    "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
+    "Use this instead of whois_query when you need ASNs from a RIPE AS-SET. "
     "CRITICAL: For 'top-level', 'direct', or 'immediate' members, use max_depth=1. "
     "For complete expansion, use max_depth=10+. Large AS-SETs like 'AS-RETN' have hundreds "
     "of nested AS-SETs - choose depth carefully to balance completeness vs speed. "
     "Automatically handles recursive expansion, deduplication, and cycle detection. "
-    "Perfect for network analysis, route filtering, and policy generation."
+    "Perfect for network analysis, route filtering, and policy generation for RIPE-managed AS-SETs."
 )
 
 SETNAME_DESCRIPTION = (
-    "AS-SET name to recursively expand into concrete ASN numbers. "
+    "AS-SET name to recursively expand into concrete ASN numbers from RIPE database. "
     "Examples: 'AS-CLOUDFLARE', 'AS-GOOGLE', 'AS-RETN'. "
     "The tool will automatically resolve all nested AS-SETs and return a complete "
-    "list of individual ASNs contained within the hierarchy."
+    "list of individual ASNs contained within the hierarchy from RIPE NCC records."
 )
 
 MAX_DEPTH_DESCRIPTION = (
