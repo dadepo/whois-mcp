@@ -53,11 +53,15 @@ def register_tools(mcp: FastMCP) -> None:
         from whois_mcp.tools.arin.validate_route_object import (
             register as reg_arin_validate_route,
         )
+        from whois_mcp.tools.arin.expand_as_set import (
+            register as reg_arin_expand_as_set,
+        )
 
         tool_registrations.extend(
             [
                 reg_arin_whois,
                 reg_arin_validate_route,
+                reg_arin_expand_as_set,
             ]
         )
     else:
