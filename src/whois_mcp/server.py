@@ -49,14 +49,14 @@ def register_tools(mcp: FastMCP) -> None:
     # Register ARIN tools if enabled
     if SUPPORT_ARIN:
         logger.info("ARIN support enabled - registering ARIN tools")
-        from whois_mcp.tools.arin.whois_query import register as reg_arin_whois
-        from whois_mcp.tools.arin.validate_route_object import (
-            register as reg_arin_validate_route,
-        )
+        from whois_mcp.tools.arin.contact_card import register as reg_arin_contact_card
         from whois_mcp.tools.arin.expand_as_set import (
             register as reg_arin_expand_as_set,
         )
-        from whois_mcp.tools.arin.contact_card import register as reg_arin_contact_card
+        from whois_mcp.tools.arin.validate_route_object import (
+            register as reg_arin_validate_route,
+        )
+        from whois_mcp.tools.arin.whois_query import register as reg_arin_whois
 
         tool_registrations.extend(
             [

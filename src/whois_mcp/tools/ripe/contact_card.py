@@ -6,8 +6,7 @@ import logging
 from typing import Annotated, Any
 
 import httpx
-from mcp.server.fastmcp import Context, FastMCP
-from mcp.server.session import ServerSession
+from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from ...cache import TTLCache
