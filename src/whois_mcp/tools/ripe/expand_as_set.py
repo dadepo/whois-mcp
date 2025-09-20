@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 _as_set_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
 # Tool metadata constants
-TOOL_NAME = "expand_as_set"
+TOOL_NAME = "ripe_expand_as_set"
 TOOL_DESCRIPTION = (
     "Efficiently expand AS-SET objects from the RIPE NCC database into concrete ASNs with configurable depth. "
     "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "

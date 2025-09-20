@@ -39,7 +39,7 @@ def _get_whois_config() -> tuple[str, int]:
 
 
 # Tool metadata constants
-TOOL_NAME = "whois_query"
+TOOL_NAME = "ripe_whois_query"
 TOOL_DESCRIPTION = (
     "Perform raw WHOIS queries against the RIPE NCC database to get complete object information in RPSL format. "
     "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "

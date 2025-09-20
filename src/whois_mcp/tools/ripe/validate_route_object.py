@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 _route_cache: TTLCache[str, Any] = TTLCache(max_items=1000, ttl_seconds=300.0)
 
 # Tool metadata constants
-TOOL_NAME = "validate_route_object"
+TOOL_NAME = "ripe_validate_route_object"
 TOOL_DESCRIPTION = (
     "PREFERRED TOOL for validating route object registration in the RIPE NCC database. "
     "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "

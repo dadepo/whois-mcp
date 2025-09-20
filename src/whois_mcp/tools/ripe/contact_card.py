@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _contact_cache: TTLCache[str, Any] = TTLCache(max_items=500, ttl_seconds=600.0)
 
 # Tool metadata constants
-TOOL_NAME = "contact_card"
+TOOL_NAME = "ripe_contact_card"
 TOOL_DESCRIPTION = (
     "Retrieve contact information (abuse, NOC, admin) for IP addresses, ASNs, or organizations from the RIPE NCC database. "
     "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
