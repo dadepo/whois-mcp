@@ -21,7 +21,7 @@ else:
 
 def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""
-    from whois_mcp.config import SUPPORT_RIPE
+    from whois_mcp.config import SUPPORT_ARIN, SUPPORT_RIPE
 
     tool_registrations: list[Callable[[FastMCP], None]] = []
 
@@ -46,9 +46,22 @@ def register_tools(mcp: FastMCP) -> None:
     else:
         logger.info("RIPE NCC support disabled - skipping RIPE tools")
 
+    # Register ARIN tools if enabled
+    if SUPPORT_ARIN:
+        logger.info("ARIN support enabled - registering ARIN tools")
+        from whois_mcp.tools.arin.whois_query import register as reg_arin_whois
+
+        tool_registrations.extend(
+            [
+                reg_arin_whois,
+            ]
+        )
+    else:
+        logger.info("ARIN support disabled - skipping ARIN tools")
+
     # Future: Add other RIR tools here
-    # if SUPPORT_ARIN:
-    #     from whois_mcp.tools.arin.* import register as reg_*
+    # if SUPPORT_APNIC:
+    #     from whois_mcp.tools.apnic.* import register as reg_*
     #     tool_registrations.extend([...])
 
     if not tool_registrations:
