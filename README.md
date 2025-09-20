@@ -12,7 +12,13 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 
 ### Regional Internet Registry (RIR) Support
 
-Currently, this MCP server is primarily optimized for **RIPE NCC** (Europe/Middle East/Central Asia) resources and databases. Support for other Regional Internet Registries is planned.
+This MCP server supports multiple Regional Internet Registries (RIRs):
+
+- ✅ **RIPE NCC** (Europe/Middle East/Central Asia) - Full support
+- ✅ **ARIN** (North America) - Full support
+- 🔄 **APNIC** (Asia-Pacific) - Planned  
+- 🔄 **LACNIC** (Latin America) - Planned
+- 🔄 **AFRINIC** (Africa) - Planned
 
 ## Usage
 
@@ -60,8 +66,9 @@ Add to your Claude Desktop configuration:
 
 Environment variables (optional):
 ```bash
-# Enable/disable RIPE NCC support (default: true)
-SUPPORT_RIPE=true
+# Enable/disable RIR support
+SUPPORT_RIPE=true    # RIPE NCC (default: true)
+SUPPORT_ARIN=false   # ARIN (default: false)
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS=10
@@ -77,9 +84,10 @@ USER_AGENT="whois-mcp/1.0"
 ### RIR Support Control
 
 - **`SUPPORT_RIPE=true`** (default): Enables RIPE NCC queries using hardcoded endpoints (`whois.ripe.net`, `https://rest.db.ripe.net`)
-- **`SUPPORT_RIPE=false`**: Disables RIPE NCC queries entirely
+- **`SUPPORT_ARIN=true`**: Enables ARIN queries using hardcoded endpoints (`whois.arin.net`, `https://whois.arin.net/rest`)
+- Set to `false` to disable specific RIRs
 
-RIPE endpoints are hardcoded for reliability. This is the foundation for supporting multiple RIRs - in future versions, you'll be able to enable specific RIRs like ARIN, APNIC, LACNIC, and AFRINIC as needed.
+All RIR endpoints are hardcoded for reliability. You can enable multiple RIRs simultaneously - tools will be prefixed with the RIR name (e.g., `ripe_whois_query`, `arin_whois_query`).
 
 ## License
 

@@ -43,9 +43,10 @@ TOOL_NAME = "arin_whois_query"
 TOOL_DESCRIPTION = (
     "Perform raw WHOIS queries against the ARIN database to get complete object information in RPSL format. "
     "This tool is specifically for the ARIN RIR (North America region - United States, Canada, parts of Caribbean). "
-    "Use ONLY when you need full object details, contact information, or administrative data from ARIN. "
-    "DO NOT use for route validation - use validate_route_object for checking if route objects exist. "
-    "DO NOT use for AS-SET expansion - use expand_as_set for getting ASN lists. "
+    "Use ONLY when you need full object details or administrative data from ARIN. "
+    "DO NOT use for contact information - use arin_contact_card for abuse, NOC, admin, or tech contacts. "
+    "DO NOT use for route validation - use arin_validate_route_object for checking if route objects exist. "
+    "DO NOT use for AS-SET expansion - use arin_expand_as_set for getting ASN lists. "
     "This returns raw ARIN database records with all attributes for detailed analysis."
 )
 

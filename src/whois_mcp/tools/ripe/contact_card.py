@@ -23,8 +23,10 @@ _contact_cache: TTLCache[str, Any] = TTLCache(max_items=500, ttl_seconds=600.0)
 # Tool metadata constants
 TOOL_NAME = "ripe_contact_card"
 TOOL_DESCRIPTION = (
-    "Retrieve contact information (abuse, NOC, admin) for IP addresses, ASNs, or organizations from the RIPE NCC database. "
+    "PREFERRED TOOL for retrieving contact information (abuse, NOC, admin, tech) for IP addresses, ASNs, or organizations from the RIPE NCC database. "
     "This tool is specifically for the RIPE RIR (Europe/Middle East/Central Asia region). "
+    "Use this when you need to CONTACT someone about: abuse reports, security incidents, network issues, or administrative matters. "
+    "Keywords: 'contact', 'abuse', 'who should I contact', 'report', 'incident', 'NOC', 'technical support', 'admin'. "
     "Automatically resolves organization details and extracts abuse mailboxes, NOC contacts, "
     "phone numbers, and administrative information from RIPE database. Perfect for incident response, "
     "network troubleshooting, and compliance reporting for RIPE-managed resources. Returns structured contact data with "
@@ -77,8 +79,6 @@ async def _contact_card_request(
     ip: Annotated[str | None, Field(description=IP_DESCRIPTION)] = None,
     asn: Annotated[int | None, Field(description=ASN_DESCRIPTION)] = None,
     org: Annotated[str | None, Field(description=ORG_DESCRIPTION)] = None,
-    *,
-    ctx: Context[ServerSession, None],
 ) -> dict[str, Any]:
     """
     Retrieve comprehensive contact information for IP addresses, ASNs, or organizations.
@@ -99,7 +99,7 @@ async def _contact_card_request(
     # Validate input parameters
     provided_params = sum(1 for param in [ip, asn, org] if param is not None)
     if provided_params != 1:
-        await ctx.error(
+        logger.error(
             "Contact card request failed: Provide exactly one of ip, asn, or org"
         )
         return {
@@ -123,15 +123,13 @@ async def _contact_card_request(
         query_value = org
 
     # Log the incoming request
-    await ctx.info(f"Starting contact card lookup for {query_type}='{query_value}'")
+    logger.info(f"Starting contact card lookup for {query_type}='{query_value}'")
 
     # Check cache first
     cached_result = _contact_cache.get(cache_key)
     if cached_result is not None:
         logger.info(f"Contact card for {query_type}='{query_value}' served from cache")
-        await ctx.info(
-            f"Contact card for {query_type}='{query_value}' served from cache"
-        )
+        # Already logged above
         return cached_result
 
     try:
@@ -285,7 +283,7 @@ async def _contact_card_request(
         abuse_available = "available" if result["data"]["abuse"] else "not available"
         admin_count = len(result["data"]["admin_contacts"])
         tech_count = len(result["data"]["tech_contacts"])
-        await ctx.info(
+        logger.info(
             f"Contact card completed: found '{org_name}' (abuse: {abuse_available}, "
             f"admin: {admin_count}, tech: {tech_count} contacts)"
         )
@@ -300,7 +298,7 @@ async def _contact_card_request(
             f"Contact card lookup for {query_type}='{query_value}' failed: {str(e)}"
         )
         logger.error(error_msg)
-        await ctx.error(f"Contact card lookup failed: {error_msg}")
+        # Error already logged above
         return {"ok": False, "error": "lookup_error", "detail": str(e)}
 
 
