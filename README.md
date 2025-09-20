@@ -68,7 +68,7 @@ Environment variables (optional):
 ```bash
 # Enable/disable RIR support
 SUPPORT_RIPE=true    # RIPE NCC (default: true)
-SUPPORT_ARIN=false   # ARIN (default: false)
+SUPPORT_ARIN=true   # ARIN (default: true)
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS=10
