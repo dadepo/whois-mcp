@@ -31,7 +31,9 @@ TOOL_DESCRIPTION = (
     "clear categorization of contact types and purposes."
 )
 
-IP_DESCRIPTION = "IP address to look up contact information for in RIPE database (IPv4 or IPv6)"
+IP_DESCRIPTION = (
+    "IP address to look up contact information for in RIPE database (IPv4 or IPv6)"
+)
 ASN_DESCRIPTION = "ASN number to look up contact information for in RIPE database (without 'AS' prefix)"
 ORG_DESCRIPTION = "Organization handle/key to look up contact information for directly"
 
