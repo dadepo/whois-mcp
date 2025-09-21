@@ -86,16 +86,17 @@ async def _get_as_set_data(setname: str) -> dict[str, Any]:
 def _extract_members(data: dict[str, Any]) -> list[str]:
     """Extract member list from ARIN AS-SET response."""
     # ARIN's response format may vary, handle different possible structures
-    members = []
+    members: list[str] = []
 
     # Try different possible field names for members
     for field in ["members", "member", "as-set", "asSet"]:
         if field in data:
-            member_data = data[field]
+            member_data: str | list[str] = data[field]
             if isinstance(member_data, list):
-                members.extend([str(m).strip() for m in member_data if m])
-            elif isinstance(member_data, str):
-                # Handle comma-separated or space-separated lists
+                for item in member_data:
+                    if item:
+                        members.append(str(item).strip())
+            else:
                 members.extend(
                     [
                         m.strip()

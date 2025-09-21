@@ -137,13 +137,11 @@ async def _validate_route_object_request(
         search_data = await _search_route(prefix)
 
         matches: list[dict[str, str]] = []
-        routes = search_data.get("routes", [])
+        routes: list[dict[str, Any]] = search_data.get("routes", [])
 
         # Handle different possible ARIN response formats
         if isinstance(routes, dict):
             routes = [routes]
-        elif not isinstance(routes, list):
-            routes = []
 
         for route_obj in routes:
             # ARIN may have different field names - adapt as needed

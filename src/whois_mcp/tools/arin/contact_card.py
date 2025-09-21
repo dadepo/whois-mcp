@@ -242,20 +242,17 @@ async def _contact_card_request(
             }
 
         # Get POC links
-        poc_links = []
+        poc_links: list[dict[str, Any]] = []
+        poc_links_data: dict[str, list[Any]] = {}
         if "net" in data:
             poc_links_data = data["net"].get("pocLinks", {})
         elif "asn" in data:
             poc_links_data = data["asn"].get("pocLinks", {})
         elif "org" in data:
             poc_links_data = data["org"].get("pocLinks", {})
-        else:
-            poc_links_data = {}
 
         if poc_links_data and "pocLinkRef" in poc_links_data:
             poc_refs = poc_links_data["pocLinkRef"]
-            if not isinstance(poc_refs, list):
-                poc_refs = [poc_refs]
 
             for poc_ref in poc_refs:
                 poc_handle = poc_ref.get("@handle", "")
@@ -270,9 +267,9 @@ async def _contact_card_request(
 
         # Fetch detailed POC information
         abuse_contact = None
-        admin_contacts = []
-        tech_contacts = []
-        noc_contacts = []
+        admin_contacts: list[dict[str, Any]] = []
+        tech_contacts: list[dict[str, Any]] = []
+        noc_contacts: list[dict[str, Any]] = []
 
         for poc_link in poc_links:
             poc_details = await _get_poc_details(poc_link["handle"])
