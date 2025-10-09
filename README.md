@@ -14,9 +14,9 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 
 This MCP server supports multiple Regional Internet Registries (RIRs):
 
-- ✅ **RIPE NCC** (Europe/Middle East/Central Asia) - Full support
-- ✅ **ARIN** (North America) - Full support
-- 🔄 **APNIC** (Asia-Pacific) - Planned  
+- ✅ **RIPE NCC** (Europe/Middle East/Central Asia)
+- ✅ **ARIN** (North America)
+- 🚧 **APNIC** (Asia-Pacific) - In progress  
 - 🔄 **LACNIC** (Latin America) - Planned
 - 🔄 **AFRINIC** (Africa) - Planned
 
