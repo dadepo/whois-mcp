@@ -46,13 +46,13 @@ Add to your Claude Desktop configuration:
 
 ### Expand AS-SETs
 ```
-"What ASNs are in AS-HURRICANE?"
+"What ASNs are in AS-HETZNER?"
 → Uses expand_as_set to list member ASNs
 ```
 
 ### Validate Route Objects
 ```
-"Is there a route object for 192.0.2.0/24 originated by AS64496?"
+"Is there a route object for 185.1.1.0/24 originated by AS61417?"
 → Uses validate_route_object to check IRR databases
 ```
 
