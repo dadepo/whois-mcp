@@ -16,6 +16,14 @@ __all__ = ["register"]
 
 logger = logging.getLogger(__name__)
 
+# Type definitions for vCard structure from RDAP
+# vCard property format: [name, params, type, value]
+# Example: ["email", {}, "text", "abuse@apnic.net"]
+VCardValue = str | list[str]
+VCardProperty = list[str | dict[str, str] | VCardValue]
+VCardProperties = list[VCardProperty]
+VCardArray = list[str | VCardProperties]
+
 # Initialize cache with 10-minute TTL for contact results
 _contact_cache: TTLCache[str, Any] = TTLCache(max_items=500, ttl_seconds=600.0)
 
@@ -65,9 +73,9 @@ async def _get_rdap(url: str) -> dict[str, Any]:
         raise
 
 
-def _parse_vcard(vcard_array: list[Any]) -> dict[str, Any]:
+def _parse_vcard(vcard_array: VCardArray) -> dict[str, Any]:
     """Parse vCard data from RDAP entity into structured contact info."""
-    contact = {
+    contact: dict[str, Any] = {
         "name": None,
         "emails": [],
         "phones": [],
@@ -78,13 +86,18 @@ def _parse_vcard(vcard_array: list[Any]) -> dict[str, Any]:
         return contact
 
     # vCard format: ["vcard", [[property, params, type, value], ...]]
-    vcard_properties = vcard_array[1] if isinstance(vcard_array[1], list) else []
+    # Extract the properties array (index 1)
+    if len(vcard_array) < 2 or not isinstance(vcard_array[1], list):
+        return contact
+
+    vcard_properties: VCardProperties = vcard_array[1]
 
     for prop in vcard_properties:
-        if not isinstance(prop, list) or len(prop) < 4:
+        if len(prop) < 4:
             continue
 
-        prop_name = prop[0]
+        # Extract property fields: [name, params, type, value]
+        prop_name = str(prop[0]) if len(prop) > 0 else ""
         prop_value = prop[3] if len(prop) > 3 else None
 
         if prop_name == "fn" and prop_value:
@@ -95,9 +108,10 @@ def _parse_vcard(vcard_array: list[Any]) -> dict[str, Any]:
             contact["phones"].append(prop_value)
         elif prop_name == "adr" and len(prop) > 2:
             # Address might be in params label or in the value array
-            params = prop[1] if len(prop) > 1 and isinstance(prop[1], dict) else {}
-            if "label" in params:
-                contact["address"] = params["label"]
+            if len(prop) > 1 and isinstance(prop[1], dict):
+                params: dict[str, str] = prop[1]
+                if "label" in params:
+                    contact["address"] = params["label"]
 
     return contact
 
