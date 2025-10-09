@@ -69,10 +69,25 @@ def register_tools(mcp: FastMCP) -> None:
     else:
         logger.info("ARIN support disabled - skipping ARIN tools")
 
-    # Future: Add other RIR tools here
-    # if SUPPORT_APNIC:
-    #     from whois_mcp.tools.apnic.* import register as reg_*
-    #     tool_registrations.extend([...])
+    # Register APNIC tools if enabled
+    if SUPPORT_APNIC:
+        logger.info("APNIC support enabled - registering APNIC tools")
+        from whois_mcp.tools.apnic.contact_card import (
+            register as reg_apnic_contact_card,
+        )
+        from whois_mcp.tools.apnic.whois_query import register as reg_apnic_whois
+
+        tool_registrations.extend(
+            [
+                reg_apnic_whois,
+                reg_apnic_contact_card,
+            ]
+        )
+        logger.info(
+            "Note: APNIC expand_as_set and validate_route_object tools are not yet implemented"
+        )
+    else:
+        logger.info("APNIC support disabled - skipping APNIC tools")
 
     if not tool_registrations:
         logger.warning("No tools registered - all RIR support is disabled")
