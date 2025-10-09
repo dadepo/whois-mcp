@@ -40,7 +40,7 @@ ARIN_RDAP_BASE = "https://rdap.arin.net/registry"
 # APNIC Endpoints
 APNIC_WHOIS_SERVER = "whois.apnic.net"
 APNIC_WHOIS_PORT = 43
-APNIC_REST_BASE = "https://rest.db.apnic.net"
+APNIC_REST_BASE = "https://registry-api.apnic.net/v1"
 APNIC_RDAP_BASE = "https://rdap.apnic.net"
 
 # General Configuration
