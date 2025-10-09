@@ -23,6 +23,7 @@ def env_bool(key: str, default: bool) -> bool:
 # RIR Support Configuration
 SUPPORT_RIPE = env_bool("SUPPORT_RIPE", True)
 SUPPORT_ARIN = env_bool("SUPPORT_ARIN", True)
+SUPPORT_APNIC = env_bool("SUPPORT_APNIC", True)
 
 # RIPE NCC Endpoints
 RIPE_WHOIS_SERVER = "whois.ripe.net"
@@ -35,6 +36,12 @@ ARIN_WHOIS_SERVER = "whois.arin.net"
 ARIN_WHOIS_PORT = 43
 ARIN_REST_BASE = "https://whois.arin.net/rest"
 ARIN_RDAP_BASE = "https://rdap.arin.net/registry"
+
+# APNIC Endpoints
+APNIC_WHOIS_SERVER = "whois.apnic.net"
+APNIC_WHOIS_PORT = 43
+APNIC_REST_BASE = "https://rest.db.apnic.net"
+APNIC_RDAP_BASE = "https://rdap.apnic.net"
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS = env_int("HTTP_TIMEOUT_SECONDS", 10)
