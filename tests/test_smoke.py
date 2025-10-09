@@ -135,7 +135,9 @@ class TestSmokeTests:
         from whois_mcp.tools.ripe.contact_card import (
             TOOL_DESCRIPTION as RIPE_CONTACT_DESCRIPTION,
         )
-        from whois_mcp.tools.ripe.contact_card import TOOL_NAME as RIPE_CONTACT_TOOL_NAME
+        from whois_mcp.tools.ripe.contact_card import (
+            TOOL_NAME as RIPE_CONTACT_TOOL_NAME,
+        )
         from whois_mcp.tools.ripe.whois_query import (
             TOOL_DESCRIPTION as RIPE_WHOIS_DESCRIPTION,
         )

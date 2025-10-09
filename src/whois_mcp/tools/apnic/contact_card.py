@@ -279,9 +279,7 @@ async def _contact_card_request(
         return result
 
     except Exception as e:
-        error_msg = (
-            f"APNIC contact card lookup for {query_type}='{query_value}' failed: {str(e)}"
-        )
+        error_msg = f"APNIC contact card lookup for {query_type}='{query_value}' failed: {str(e)}"
         logger.error(error_msg)
         return {"ok": False, "error": "lookup_error", "detail": str(e)}
 
@@ -292,4 +290,3 @@ def register(mcp: FastMCP) -> None:
         name=TOOL_NAME,
         description=TOOL_DESCRIPTION,
     )(_contact_card_request)
-
