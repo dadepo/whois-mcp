@@ -132,16 +132,6 @@ class TestSmokeTests:
 
     def test_tool_constants(self):
         """Test that tools have proper constant definitions."""
-        from whois_mcp.tools.ripe.contact_card import (
-            TOOL_DESCRIPTION as RIPE_CONTACT_DESCRIPTION,
-        )
-        from whois_mcp.tools.ripe.contact_card import (
-            TOOL_NAME as RIPE_CONTACT_TOOL_NAME,
-        )
-        from whois_mcp.tools.ripe.whois_query import (
-            TOOL_DESCRIPTION as RIPE_WHOIS_DESCRIPTION,
-        )
-        from whois_mcp.tools.ripe.whois_query import TOOL_NAME as RIPE_WHOIS_TOOL_NAME
         from whois_mcp.tools.apnic.contact_card import (
             TOOL_DESCRIPTION as APNIC_CONTACT_DESCRIPTION,
         )
@@ -154,6 +144,16 @@ class TestSmokeTests:
         from whois_mcp.tools.apnic.whois_query import (
             TOOL_NAME as APNIC_WHOIS_TOOL_NAME,
         )
+        from whois_mcp.tools.ripe.contact_card import (
+            TOOL_DESCRIPTION as RIPE_CONTACT_DESCRIPTION,
+        )
+        from whois_mcp.tools.ripe.contact_card import (
+            TOOL_NAME as RIPE_CONTACT_TOOL_NAME,
+        )
+        from whois_mcp.tools.ripe.whois_query import (
+            TOOL_DESCRIPTION as RIPE_WHOIS_DESCRIPTION,
+        )
+        from whois_mcp.tools.ripe.whois_query import TOOL_NAME as RIPE_WHOIS_TOOL_NAME
 
         # All tool names should be strings
         assert isinstance(RIPE_CONTACT_TOOL_NAME, str)
