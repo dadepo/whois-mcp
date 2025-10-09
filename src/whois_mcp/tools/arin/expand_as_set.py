@@ -113,10 +113,20 @@ async def _expand_as_set_recursive(
     setname: str,
     seen: set[str],
     out_asns: set[int],
+    found_sets: set[str],
     depth: int = 0,
     max_depth: int = 10,
 ) -> None:
-    """Recursively expand an AS-SET into concrete ASNs (cycle-safe, depth-limited)."""
+    """Recursively expand an AS-SET into concrete ASNs (cycle-safe, depth-limited).
+
+    Args:
+        setname: The AS-SET name to expand
+        seen: Set of already-visited AS-SETs (for cycle detection)
+        out_asns: Output set where discovered ASNs are accumulated
+        found_sets: Set of AS-SETs that were successfully found in the database
+        depth: Current recursion depth
+        max_depth: Maximum recursion depth
+    """
     if depth >= max_depth:
         logger.warning(
             f"Maximum recursion depth ({max_depth}) reached for ARIN AS-SET: {setname}"
@@ -133,10 +143,14 @@ async def _expand_as_set_recursive(
     if cached_result:
         logger.debug(f"Cache hit for ARIN AS-SET: {setname}")
         out_asns.update(cached_result)
+        found_sets.add(setname)  # Mark as found
         return
 
     try:
         data = await _get_as_set_data(setname)
+        # Mark this AS-SET as found (it exists in the database)
+        found_sets.add(setname)
+
         members = _extract_members(data)
 
         if not members:
@@ -153,7 +167,7 @@ async def _expand_as_set_recursive(
                 # Nested AS-SET - recurse
                 try:
                     await _expand_as_set_recursive(
-                        member, seen, asns, depth + 1, max_depth
+                        member, seen, asns, found_sets, depth + 1, max_depth
                     )
                 except Exception as e:
                     logger.warning(
@@ -238,13 +252,15 @@ async def _expand_as_set_request(
     try:
         seen: set[str] = set()
         asns: set[int] = set()
-        await _expand_as_set_recursive(setname, seen, asns, 0, max_depth)
+        found_sets: set[str] = set()  # Track which AS-SETs were actually found
+        await _expand_as_set_recursive(setname, seen, asns, found_sets, 0, max_depth)
 
-        # Check if the AS-SET was found
-        if len(asns) == 0 and len(seen) <= 1:
-            logger.info(f"ARIN AS-SET '{setname}' not found or contains no ASNs")
+        # Determine the status based on whether the AS-SET was found and has members
+        if setname not in found_sets:
+            # AS-SET doesn't exist in the database
+            logger.info(f"ARIN AS-SET '{setname}' not found in database")
             await ctx.info(
-                f"ARIN AS-SET expansion completed: not-found ('{setname}' does not exist or contains no ASNs)"
+                f"ARIN AS-SET expansion completed: not-found ('{setname}' does not exist in database)"
             )
             result: dict[str, Any] = {
                 "ok": True,
@@ -255,7 +271,23 @@ async def _expand_as_set_request(
                     "status": "not-found",
                 },
             }
+        elif len(asns) == 0:
+            # AS-SET exists but has no members
+            logger.info(f"ARIN AS-SET '{setname}' exists but contains no members")
+            await ctx.info(
+                f"ARIN AS-SET expansion completed: empty ('{setname}' exists but has no members)"
+            )
+            result = {
+                "ok": True,
+                "data": {
+                    "as_set": setname,
+                    "asns": [],
+                    "count": 0,
+                    "status": "empty",
+                },
+            }
         else:
+            # AS-SET exists and has members
             await ctx.info(
                 f"ARIN AS-SET expansion completed: expanded (found {len(asns)} ASNs from '{setname}' at depth {max_depth})"
             )
