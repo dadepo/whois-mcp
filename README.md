@@ -12,13 +12,24 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 
 ### Regional Internet Registry (RIR) Support
 
-This MCP server supports multiple Regional Internet Registries (RIRs):
+This MCP server supports all five Regional Internet Registries (RIRs) with varying tool availability:
 
-- ✅ **RIPE NCC** (Europe/Middle East/Central Asia)
-- ✅ **ARIN** (North America)
-- 🚧 **APNIC** (Asia-Pacific) - In progress  
-- 🔄 **LACNIC** (Latin America) - Planned
-- 🔄 **AFRINIC** (Africa) - Planned
+| RIR | Region | WHOIS Query | AS-SET Expansion | Route Validation | Contact Card |
+|-----|--------|:-----------:|:----------------:|:----------------:|:------------:|
+| **RIPE NCC** | Europe, Middle East, Central Asia | ✅ | ✅ | ✅ | ✅ |
+| **ARIN** | North America | ✅ | ✅ | ✅ | ✅ |
+| **APNIC** | Asia-Pacific | ✅ | ➖ | ➖ | ✅ |
+| **AfriNIC** | Africa | ✅ | ➖ | ➖ | ✅ |
+| **LACNIC** | Latin America & Caribbean | ✅ | ➖ | ➖ | ✅ |
+
+**Legend:**
+- ✅ Fully supported via REST/RDAP APIs
+- ➖ Not available (no public API; use `{rir}_whois_query` and parse output instead)
+
+**Notes:**
+- RIPE & ARIN provide REST APIs for all tools
+- APNIC, AfriNIC & LACNIC use RDAP for contact cards; AS-SET expansion and route validation can be done via raw WHOIS parsing
+- All RIRs support basic WHOIS queries for any object type
 
 ## Usage
 
@@ -66,9 +77,12 @@ Add to your Claude Desktop configuration:
 
 Environment variables (optional):
 ```bash
-# Enable/disable RIR support
-SUPPORT_RIPE=true    # RIPE NCC (default: true)
-SUPPORT_ARIN=true   # ARIN (default: true)
+# Enable/disable RIR support (all default to true)
+SUPPORT_RIPE=true      # RIPE NCC (Europe/Middle East/Central Asia)
+SUPPORT_ARIN=true      # ARIN (North America)
+SUPPORT_APNIC=true     # APNIC (Asia-Pacific)
+SUPPORT_AFRINIC=true   # AfriNIC (Africa)
+SUPPORT_LACNIC=true    # LACNIC (Latin America & Caribbean)
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS=10
@@ -83,11 +97,15 @@ USER_AGENT="whois-mcp/1.0"
 
 ### RIR Support Control
 
-- **`SUPPORT_RIPE=true`** (default): Enables RIPE NCC queries using hardcoded endpoints (`whois.ripe.net`, `https://rest.db.ripe.net`)
-- **`SUPPORT_ARIN=true`**: Enables ARIN queries using hardcoded endpoints (`whois.arin.net`, `https://whois.arin.net/rest`)
-- Set to `false` to disable specific RIRs
+Each RIR can be individually enabled or disabled using environment variables. All RIR endpoints are hardcoded for reliability:
 
-All RIR endpoints are hardcoded for reliability. You can enable multiple RIRs simultaneously - tools will be prefixed with the RIR name (e.g., `ripe_whois_query`, `arin_whois_query`).
+- **RIPE NCC**: `whois.ripe.net`, `https://rest.db.ripe.net`
+- **ARIN**: `whois.arin.net`, `https://whois.arin.net/rest`
+- **APNIC**: `whois.apnic.net`, `https://rdap.apnic.net`
+- **AfriNIC**: `whois.afrinic.net`, `https://rdap.afrinic.net/rdap`
+- **LACNIC**: `whois.lacnic.net`, `https://rdap.lacnic.net/rdap`
+
+Set any `SUPPORT_{RIR}=false` to disable specific RIRs. Tools are prefixed with the RIR name (e.g., `ripe_whois_query`, `arin_whois_query`, `apnic_contact_card`).
 
 ## License
 
