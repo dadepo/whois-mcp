@@ -14,22 +14,23 @@ A **Model Context Protocol (MCP) server** that provides LLMs with network inform
 
 This MCP server supports all five Regional Internet Registries (RIRs) with varying tool availability:
 
-| RIR | Region | WHOIS Query | AS-SET Expansion | Route Validation | Contact Card |
-|-----|--------|:-----------:|:----------------:|:----------------:|:------------:|
-| **RIPE NCC** | Europe, Middle East, Central Asia | ✅ | ✅ | ✅ | ✅ |
-| **ARIN** | North America | ✅ | ✅ | ✅ | ✅ |
-| **APNIC** | Asia-Pacific | ✅ | ➖ | ➖ | ✅ |
-| **AfriNIC** | Africa | ✅ | ➖ | ➖ | ✅ |
-| **LACNIC** | Latin America & Caribbean | ✅ | ➖ | ➖ | ✅ |
+| Tool | RIPE NCC | ARIN | APNIC | AfriNIC | LACNIC |
+|------|:--------:|:----:|:-----:|:-------:|:------:|
+| **WHOIS Query** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **AS-SET Expansion** | ✅ | ✅ | ➖ | ➖ | ➖ |
+| **Route Validation** | ✅ | ✅ | ➖ | ➖ | ➖ |
+| **Contact Card** | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **Legend:**
 - ✅ Fully supported via REST/RDAP APIs
 - ➖ Not available (no public API; use `{rir}_whois_query` and parse output instead)
 
-**Notes:**
-- RIPE & ARIN provide REST APIs for all tools
-- APNIC, AfriNIC & LACNIC use RDAP for contact cards; AS-SET expansion and route validation can be done via raw WHOIS parsing
-- All RIRs support basic WHOIS queries for any object type
+**RIR Coverage:**
+- **RIPE NCC** : Europe, Middle East, Central Asia
+- **ARIN** : North America
+- **APNIC** : Asia-Pacific
+- **AfriNIC** : Africa
+- **LACNIC** : Latin America & Caribbean
 
 ## Usage
 
