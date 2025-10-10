@@ -21,7 +21,7 @@ else:
 
 def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""
-    from whois_mcp.config import SUPPORT_APNIC, SUPPORT_ARIN, SUPPORT_RIPE
+    from whois_mcp.config import SUPPORT_AFRINIC, SUPPORT_APNIC, SUPPORT_ARIN, SUPPORT_RIPE
 
     tool_registrations: list[Callable[[FastMCP], None]] = []
 
@@ -88,6 +88,26 @@ def register_tools(mcp: FastMCP) -> None:
         )
     else:
         logger.info("APNIC support disabled - skipping APNIC tools")
+
+    # Register AfriNIC tools if enabled
+    if SUPPORT_AFRINIC:
+        logger.info("AfriNIC support enabled - registering AfriNIC tools")
+        from whois_mcp.tools.afrinic.contact_card import (
+            register as reg_afrinic_contact_card,
+        )
+        from whois_mcp.tools.afrinic.whois_query import register as reg_afrinic_whois
+
+        tool_registrations.extend(
+            [
+                reg_afrinic_whois,
+                reg_afrinic_contact_card,
+            ]
+        )
+        logger.info(
+            "Note: AfriNIC expand_as_set and validate_route_object tools are not yet implemented"
+        )
+    else:
+        logger.info("AfriNIC support disabled - skipping AfriNIC tools")
 
     if not tool_registrations:
         logger.warning("No tools registered - all RIR support is disabled")

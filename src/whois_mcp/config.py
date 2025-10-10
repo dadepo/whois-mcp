@@ -24,6 +24,7 @@ def env_bool(key: str, default: bool) -> bool:
 SUPPORT_RIPE = env_bool("SUPPORT_RIPE", True)
 SUPPORT_ARIN = env_bool("SUPPORT_ARIN", True)
 SUPPORT_APNIC = env_bool("SUPPORT_APNIC", True)
+SUPPORT_AFRINIC = env_bool("SUPPORT_AFRINIC", True)
 
 # RIPE NCC Endpoints
 RIPE_WHOIS_SERVER = "whois.ripe.net"
@@ -42,6 +43,11 @@ APNIC_WHOIS_SERVER = "whois.apnic.net"
 APNIC_WHOIS_PORT = 43
 APNIC_REST_BASE = "https://registry-api.apnic.net/v1"
 APNIC_RDAP_BASE = "https://rdap.apnic.net"
+
+# AfriNIC Endpoints
+AFRINIC_WHOIS_SERVER = "whois.afrinic.net"
+AFRINIC_WHOIS_PORT = 43
+AFRINIC_RDAP_BASE = "https://rdap.afrinic.net/rdap"
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS = env_int("HTTP_TIMEOUT_SECONDS", 10)
