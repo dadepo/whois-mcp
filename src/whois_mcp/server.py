@@ -25,6 +25,7 @@ def register_tools(mcp: FastMCP) -> None:
         SUPPORT_AFRINIC,
         SUPPORT_APNIC,
         SUPPORT_ARIN,
+        SUPPORT_LACNIC,
         SUPPORT_RIPE,
     )
 
@@ -113,6 +114,26 @@ def register_tools(mcp: FastMCP) -> None:
         )
     else:
         logger.info("AfriNIC support disabled - skipping AfriNIC tools")
+
+    # Register LACNIC tools if enabled
+    if SUPPORT_LACNIC:
+        logger.info("LACNIC support enabled - registering LACNIC tools")
+        from whois_mcp.tools.lacnic.contact_card import (
+            register as reg_lacnic_contact_card,
+        )
+        from whois_mcp.tools.lacnic.whois_query import register as reg_lacnic_whois
+
+        tool_registrations.extend(
+            [
+                reg_lacnic_whois,
+                reg_lacnic_contact_card,
+            ]
+        )
+        logger.info(
+            "Note: LACNIC expand_as_set and validate_route_object tools are not yet implemented"
+        )
+    else:
+        logger.info("LACNIC support disabled - skipping LACNIC tools")
 
     if not tool_registrations:
         logger.warning("No tools registered - all RIR support is disabled")

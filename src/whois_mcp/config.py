@@ -25,6 +25,7 @@ SUPPORT_RIPE = env_bool("SUPPORT_RIPE", True)
 SUPPORT_ARIN = env_bool("SUPPORT_ARIN", True)
 SUPPORT_APNIC = env_bool("SUPPORT_APNIC", True)
 SUPPORT_AFRINIC = env_bool("SUPPORT_AFRINIC", True)
+SUPPORT_LACNIC = env_bool("SUPPORT_LACNIC", True)
 
 # RIPE NCC Endpoints
 RIPE_WHOIS_SERVER = "whois.ripe.net"
@@ -48,6 +49,11 @@ APNIC_RDAP_BASE = "https://rdap.apnic.net"
 AFRINIC_WHOIS_SERVER = "whois.afrinic.net"
 AFRINIC_WHOIS_PORT = 43
 AFRINIC_RDAP_BASE = "https://rdap.afrinic.net/rdap"
+
+# LACNIC Endpoints
+LACNIC_WHOIS_SERVER = "whois.lacnic.net"
+LACNIC_WHOIS_PORT = 43
+LACNIC_RDAP_BASE = "https://rdap.lacnic.net/rdap"
 
 # General Configuration
 HTTP_TIMEOUT_SECONDS = env_int("HTTP_TIMEOUT_SECONDS", 10)
