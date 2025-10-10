@@ -103,6 +103,23 @@ class TestSmokeTests:
         assert callable(contact_card.register)
         assert callable(whois_query.register)
 
+    def test_tool_imports_lacnic(self):
+        """Test that all LACNIC tool modules can be imported without errors."""
+        # These imports should not raise any exceptions
+        # Note: Only whois_query and contact_card are implemented for LACNIC
+        from whois_mcp.tools.lacnic import (
+            contact_card,
+            whois_query,
+        )
+
+        # Verify each module has a register function
+        assert hasattr(contact_card, "register")
+        assert hasattr(whois_query, "register")
+
+        # Verify register functions are callable
+        assert callable(contact_card.register)
+        assert callable(whois_query.register)
+
     def test_cache_imports(self):
         """Test that cache module can be imported and used."""
         from whois_mcp.cache import TTLCache
@@ -125,6 +142,7 @@ class TestSmokeTests:
         assert hasattr(config, "ARIN_REST_BASE")
         assert hasattr(config, "APNIC_REST_BASE")
         assert hasattr(config, "AFRINIC_RDAP_BASE")
+        assert hasattr(config, "LACNIC_RDAP_BASE")
         assert hasattr(config, "HTTP_TIMEOUT_SECONDS")
         assert hasattr(config, "USER_AGENT")
 
@@ -137,6 +155,8 @@ class TestSmokeTests:
         assert config.APNIC_REST_BASE.startswith("http")
         assert isinstance(config.AFRINIC_RDAP_BASE, str)
         assert config.AFRINIC_RDAP_BASE.startswith("http")
+        assert isinstance(config.LACNIC_RDAP_BASE, str)
+        assert config.LACNIC_RDAP_BASE.startswith("http")
         assert isinstance(config.HTTP_TIMEOUT_SECONDS, int | float)
         assert config.HTTP_TIMEOUT_SECONDS > 0
         assert isinstance(config.USER_AGENT, str)
@@ -147,10 +167,12 @@ class TestSmokeTests:
         assert hasattr(config, "SUPPORT_ARIN")
         assert hasattr(config, "SUPPORT_APNIC")
         assert hasattr(config, "SUPPORT_AFRINIC")
+        assert hasattr(config, "SUPPORT_LACNIC")
         assert isinstance(config.SUPPORT_RIPE, bool)
         assert isinstance(config.SUPPORT_ARIN, bool)
         assert isinstance(config.SUPPORT_APNIC, bool)
         assert isinstance(config.SUPPORT_AFRINIC, bool)
+        assert isinstance(config.SUPPORT_LACNIC, bool)
 
     def test_tool_constants(self):
         """Test that tools have proper constant definitions."""
@@ -178,6 +200,18 @@ class TestSmokeTests:
         from whois_mcp.tools.apnic.whois_query import (
             TOOL_NAME as APNIC_WHOIS_TOOL_NAME,
         )
+        from whois_mcp.tools.lacnic.contact_card import (
+            TOOL_DESCRIPTION as LACNIC_CONTACT_DESCRIPTION,
+        )
+        from whois_mcp.tools.lacnic.contact_card import (
+            TOOL_NAME as LACNIC_CONTACT_TOOL_NAME,
+        )
+        from whois_mcp.tools.lacnic.whois_query import (
+            TOOL_DESCRIPTION as LACNIC_WHOIS_DESCRIPTION,
+        )
+        from whois_mcp.tools.lacnic.whois_query import (
+            TOOL_NAME as LACNIC_WHOIS_TOOL_NAME,
+        )
         from whois_mcp.tools.ripe.contact_card import (
             TOOL_DESCRIPTION as RIPE_CONTACT_DESCRIPTION,
         )
@@ -196,6 +230,8 @@ class TestSmokeTests:
         assert isinstance(APNIC_WHOIS_TOOL_NAME, str)
         assert isinstance(AFRINIC_CONTACT_TOOL_NAME, str)
         assert isinstance(AFRINIC_WHOIS_TOOL_NAME, str)
+        assert isinstance(LACNIC_CONTACT_TOOL_NAME, str)
+        assert isinstance(LACNIC_WHOIS_TOOL_NAME, str)
 
         # All descriptions should be non-empty strings
         assert isinstance(RIPE_CONTACT_DESCRIPTION, str)
@@ -204,6 +240,8 @@ class TestSmokeTests:
         assert isinstance(APNIC_WHOIS_DESCRIPTION, str)
         assert isinstance(AFRINIC_CONTACT_DESCRIPTION, str)
         assert isinstance(AFRINIC_WHOIS_DESCRIPTION, str)
+        assert isinstance(LACNIC_CONTACT_DESCRIPTION, str)
+        assert isinstance(LACNIC_WHOIS_DESCRIPTION, str)
 
         assert len(RIPE_CONTACT_DESCRIPTION) > 0
         assert len(RIPE_WHOIS_DESCRIPTION) > 0
@@ -211,6 +249,8 @@ class TestSmokeTests:
         assert len(APNIC_WHOIS_DESCRIPTION) > 0
         assert len(AFRINIC_CONTACT_DESCRIPTION) > 0
         assert len(AFRINIC_WHOIS_DESCRIPTION) > 0
+        assert len(LACNIC_CONTACT_DESCRIPTION) > 0
+        assert len(LACNIC_WHOIS_DESCRIPTION) > 0
 
         # Tool names should be unique across RIRs
         tool_names = {
@@ -220,8 +260,10 @@ class TestSmokeTests:
             APNIC_WHOIS_TOOL_NAME,
             AFRINIC_CONTACT_TOOL_NAME,
             AFRINIC_WHOIS_TOOL_NAME,
+            LACNIC_CONTACT_TOOL_NAME,
+            LACNIC_WHOIS_TOOL_NAME,
         }
-        assert len(tool_names) == 6  # All names should be unique
+        assert len(tool_names) == 8  # All names should be unique
 
     def test_individual_tool_registration_ripe(self):
         """Test that each RIPE tool can be registered individually."""
@@ -269,6 +311,19 @@ class TestSmokeTests:
         # Note: Only whois_query and contact_card are implemented for AfriNIC
         from whois_mcp.tools.afrinic.contact_card import register as reg_contact
         from whois_mcp.tools.afrinic.whois_query import register as reg_whois
+
+        # Each tool should be able to register with a fresh MCP instance
+        for register_func in [reg_contact, reg_whois]:
+            app = FastMCP("test-individual")
+            # Should not raise any exceptions
+            register_func(app)
+            assert app is not None
+
+    def test_individual_tool_registration_lacnic(self):
+        """Test that each LACNIC tool can be registered individually."""
+        # Note: Only whois_query and contact_card are implemented for LACNIC
+        from whois_mcp.tools.lacnic.contact_card import register as reg_contact
+        from whois_mcp.tools.lacnic.whois_query import register as reg_whois
 
         # Each tool should be able to register with a fresh MCP instance
         for register_func in [reg_contact, reg_whois]:
