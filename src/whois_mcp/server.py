@@ -21,7 +21,12 @@ else:
 
 def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the MCP server."""
-    from whois_mcp.config import SUPPORT_AFRINIC, SUPPORT_APNIC, SUPPORT_ARIN, SUPPORT_RIPE
+    from whois_mcp.config import (
+        SUPPORT_AFRINIC,
+        SUPPORT_APNIC,
+        SUPPORT_ARIN,
+        SUPPORT_RIPE,
+    )
 
     tool_registrations: list[Callable[[FastMCP], None]] = []
 

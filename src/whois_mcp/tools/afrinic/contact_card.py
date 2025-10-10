@@ -180,7 +180,9 @@ async def _contact_card_request(
         query_value = org
 
     # Log the incoming request
-    logger.info(f"Starting AfriNIC contact card lookup for {query_type}='{query_value}'")
+    logger.info(
+        f"Starting AfriNIC contact card lookup for {query_type}='{query_value}'"
+    )
 
     # Check cache first
     cached_result = _contact_cache.get(cache_key)
@@ -309,4 +311,3 @@ def register(mcp: FastMCP) -> None:
         name=TOOL_NAME,
         description=TOOL_DESCRIPTION,
     )(_contact_card_request)
-
