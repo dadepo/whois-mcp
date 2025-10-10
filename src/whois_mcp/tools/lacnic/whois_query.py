@@ -185,4 +185,3 @@ def register(mcp: FastMCP) -> None:
         name=TOOL_NAME,
         description=TOOL_DESCRIPTION,
     )(_whois_request)
-
