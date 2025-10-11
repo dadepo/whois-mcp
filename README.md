@@ -34,15 +34,71 @@ This MCP server supports all five Regional Internet Registries (RIRs) with varyi
 
 ## Usage
 
-### With Claude Desktop (or any other MCP Client)
+This MCP server supports two transport modes:
+- **Stdio mode** (recommended for Claude Desktop and Claude Code CLI)
+- **HTTP server mode** (for web-based clients and remote access)
 
-Add to your Claude Desktop configuration:
+### With Claude Desktop
+
+Add to your Claude Desktop configuration file:
+
+**Location:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**Configuration:**
 ```json
 {
   "mcpServers": {
     "whois-mcp": {
       "command": "/path/to/bin/uvx",
       "args": ["--from", "git+https://github.com/dadepo/whois-mcp.git", "whois-mcp"]
+    }
+  }
+}
+```
+
+### With Claude Code CLI
+
+Add the MCP server using the CLI:
+```bash
+
+claude mcp add --transport stdio whois-mcp -- uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp
+
+# Verify it was added
+claude mcp list
+
+# Start Claude Code
+claude
+```
+
+### HTTP Server Mode
+
+For web-based MCP clients or remote access:
+
+**Start the server:**
+```bash
+
+uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp-server
+
+# With custom host/port
+HTTP_HOST=0.0.0.0 HTTP_PORT=9000 uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp-server
+```
+
+The server will be available at `http://127.0.0.1:8000/mcp` by default.
+
+**Add to Claude Code (HTTP):**
+```bash
+claude mcp add --transport http whois-mcp-http http://127.0.0.1:8000/mcp
+```
+
+**Add to Claude Desktop (HTTP):**
+```json
+{
+  "mcpServers": {
+    "whois-mcp-http": {
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }
@@ -94,6 +150,10 @@ CACHE_MAX_ITEMS=512
 
 # Custom User-Agent string
 USER_AGENT="whois-mcp/1.0"
+
+# HTTP Server Configuration (only used by whois-mcp-server command)
+HTTP_HOST=127.0.0.1
+HTTP_PORT=8000
 ```
 
 ### RIR Support Control
@@ -107,6 +167,46 @@ Each RIR can be individually enabled or disabled using environment variables. Al
 - **LACNIC**: `whois.lacnic.net`, `https://rdap.lacnic.net/rdap`
 
 Set any `SUPPORT_{RIR}=false` to disable specific RIRs. Tools are prefixed with the RIR name (e.g., `ripe_whois_query`, `arin_whois_query`, `apnic_contact_card`).
+
+## Development
+
+### Local Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dadepo/whois-mcp.git
+cd whois-mcp
+
+# Install dependencies
+uv sync
+
+# Run in stdio mode
+uv run whois-mcp
+
+# Run HTTP server mode
+uv run whois-mcp-server
+
+# Run tests
+uv run pytest
+```
+
+### Project Structure
+
+```
+src/
+├── main.py              # Entry point for stdio mode
+├── server.py            # Entry point for HTTP server mode
+└── whois_mcp/
+    ├── config.py        # Configuration and environment variables
+    ├── register.py      # Tool registration logic
+    ├── cache.py         # Response caching
+    └── tools/           # Tool implementations by RIR
+        ├── ripe/
+        ├── arin/
+        ├── apnic/
+        ├── afrinic/
+        └── lacnic/
+```
 
 ## License
 
