@@ -149,7 +149,3 @@ def register_tools(mcp: FastMCP) -> None:
             logger.error(f"Failed to register tool {tool.__name__}: {str(e)}")
             raise
 
-
-# Create and configure the MCP server
-app = FastMCP("whois-mcp")
-register_tools(app)
