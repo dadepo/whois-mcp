@@ -190,24 +190,6 @@ uv run whois-mcp-server
 uv run pytest
 ```
 
-### Project Structure
-
-```
-src/
-├── main.py              # Entry point for stdio mode
-├── server.py            # Entry point for HTTP server mode
-└── whois_mcp/
-    ├── config.py        # Configuration and environment variables
-    ├── register.py      # Tool registration logic
-    ├── cache.py         # Response caching
-    └── tools/           # Tool implementations by RIR
-        ├── ripe/
-        ├── arin/
-        ├── apnic/
-        ├── afrinic/
-        └── lacnic/
-```
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
