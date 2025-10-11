@@ -62,3 +62,7 @@ WHOIS_READ_TIMEOUT_SECONDS = env_int("WHOIS_READ_TIMEOUT_SECONDS", 5)
 CACHE_TTL_SECONDS = env_int("CACHE_TTL_SECONDS", 60)
 CACHE_MAX_ITEMS = env_int("CACHE_MAX_ITEMS", 512)
 USER_AGENT = env_str("USER_AGENT", "whois-mcp/1.0")
+
+# HTTP Server Configuration (for whois-mcp-server command)
+HTTP_HOST = env_str("HTTP_HOST", "127.0.0.1")
+HTTP_PORT = env_int("HTTP_PORT", 8000)

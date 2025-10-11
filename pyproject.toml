@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "whois-mcp"
 version = "0.1.0"
@@ -15,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 whois-mcp = "main:main"
+whois-mcp-server = "server:main"
 
 [dependency-groups]
 dev = [

@@ -148,4 +148,3 @@ def register_tools(mcp: FastMCP) -> None:
         except Exception as e:
             logger.error(f"Failed to register tool {tool.__name__}: {str(e)}")
             raise
-
