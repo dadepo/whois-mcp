@@ -18,8 +18,8 @@ dependencies = [
 ]
 
 [project.scripts]
-whois-mcp = "main:main"
-whois-mcp-server = "server:main"
+whois-mcp = "whois_mcp.main:main"
+whois-mcp-server = "whois_mcp.server:main"
 
 [dependency-groups]
 dev = [
