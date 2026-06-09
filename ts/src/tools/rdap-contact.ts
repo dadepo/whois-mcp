@@ -81,7 +81,114 @@ function parseVcard(vcardArray: unknown): RdapContact {
     }
   }
 
+  contact.emails = uniqueValues(contact.emails);
+  contact.phones = uniqueValues(contact.phones);
   return contact;
+}
+
+function uniqueValues(values: unknown[]): unknown[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function* rdapEntities(rawEntities: unknown): Generator<Record<string, unknown>> {
+  for (const rawEntity of asArray(rawEntities)) {
+    const entity = asRecord(rawEntity);
+    yield entity;
+    yield* rdapEntities(entity.entities);
+  }
+}
+
+function hasEmail(contact: RdapContact | null): boolean {
+  return contact !== null && contact.emails.length > 0;
+}
+
+function extractEmails(text: string): string[] {
+  return [...text.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map((match) => match[0]);
+}
+
+function parseWhoisAbuseContact(rpsl: string): { emails: string[]; handle: string | null } {
+  const emails: string[] = [];
+  let handle: string | null = null;
+  let previousLineWasAbuseRelated = false;
+
+  for (const line of rpsl.split(/\r?\n/)) {
+    const abuseHeader = line.match(/^%\s*Abuse contact for .* is '([^']+)'/i);
+    if (abuseHeader?.[1]) {
+      emails.push(abuseHeader[1]);
+    }
+
+    const abuseMailbox = line.match(/^abuse-mailbox:\s*(\S+)/i);
+    if (abuseMailbox?.[1]) {
+      emails.push(abuseMailbox[1]);
+    }
+
+    const abuseHandle = line.match(/^abuse-c:\s*(\S+)/i) ?? line.match(/^mnt-irt:\s*(\S+)/i);
+    if (abuseHandle?.[1] && !handle) {
+      handle = abuseHandle[1];
+    }
+
+    const lineIsAbuseRelated = /\b(abuse|security)\b/i.test(line);
+    if (lineIsAbuseRelated || previousLineWasAbuseRelated) {
+      emails.push(...extractEmails(line));
+    }
+    previousLineWasAbuseRelated = lineIsAbuseRelated && extractEmails(line).length === 0;
+  }
+
+  return {
+    emails: uniqueValues(emails) as string[],
+    handle
+  };
+}
+
+async function getWhoisAbuseContact(
+  rir: RirConfig,
+  queryType: string,
+  queryValue: string | null | undefined,
+  deps: ToolDependencies
+): Promise<RdapContact | null> {
+  if (!queryValue || queryType === "org") {
+    return null;
+  }
+
+  const whoisQuery = queryType === "asn" ? `AS${queryValue}` : queryValue;
+  try {
+    const rpsl = await deps.whoisClient.query(rir.whois, `${whoisQuery}\r\n`, {
+      chunkSize: 8192,
+      readTimeoutReturnsPartial: true
+    });
+    const parsed = parseWhoisAbuseContact(rpsl);
+    if (parsed.emails.length === 0 && !parsed.handle) {
+      return null;
+    }
+
+    return {
+      name: `${rir.label} abuse contact`,
+      emails: parsed.emails,
+      phones: [],
+      address: null,
+      handle: parsed.handle
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mergeAbuseContact(primary: RdapContact | null, fallback: RdapContact | null): RdapContact | null {
+  if (!fallback) {
+    return primary;
+  }
+  if (!primary) {
+    return fallback;
+  }
+
+  return {
+    ...primary,
+    name: primary.name ?? fallback.name,
+    handle: primary.handle ?? fallback.handle,
+    emails: uniqueValues([...primary.emails, ...fallback.emails]),
+    phones: uniqueValues([...primary.phones, ...fallback.phones]),
+    address: primary.address ?? fallback.address
+  };
 }
 
 export async function handleRdapContact(
@@ -169,8 +276,7 @@ export async function handleRdapContact(
     const techContacts: RdapContact[] = [];
     let registrantContact: RdapContact | null = null;
 
-    for (const rawEntity of asArray(data.entities)) {
-      const entity = asRecord(rawEntity);
+    for (const entity of rdapEntities(data.entities)) {
       const roles = asArray(entity.roles).map((role) => stringValue(role));
       handle = entity.handle ?? "";
       const vcard = entity.vcardArray;
@@ -193,6 +299,11 @@ export async function handleRdapContact(
       if (roles.includes("registrant")) {
         registrantContact = contact;
       }
+    }
+
+    const whoisAbuseContact = await getWhoisAbuseContact(rir, queryType, queryValue, deps);
+    if (whoisAbuseContact && (!hasEmail(abuseContact) || whoisAbuseContact.emails.length > 0)) {
+      abuseContact = mergeAbuseContact(abuseContact, whoisAbuseContact);
     }
 
     const result: ToolResult<RdapContactData> = {

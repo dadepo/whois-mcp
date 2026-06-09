@@ -30,6 +30,22 @@ async function getRipeJson(deps: ToolDependencies, url: string): Promise<unknown
   return deps.httpClient.getJson(url, { notFoundValue: { objects: { object: [] } } });
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+async function getRipeObject(deps: ToolDependencies, handle: string, preferredType: "person" | "role"): Promise<unknown | null> {
+  const objectTypes = preferredType === "person" ? ["person", "role"] : ["role", "person"];
+  for (const objectType of objectTypes) {
+    const objects = ripeObjects(await getRipeJson(deps, `${RIRS.ripe.restBase}/ripe/${objectType}/${handle}.json`));
+    if (objects.length > 0) {
+      return objects[0];
+    }
+  }
+
+  return null;
+}
+
 export async function handleRipeContact(args: ContactArgs, deps: ToolDependencies): Promise<ToolResult<RipeContactData>> {
   const rir = RIRS.ripe;
   const providedParams = [args.ip, args.asn, args.org].filter((value) => value !== undefined && value !== null).length;
@@ -125,13 +141,12 @@ export async function handleRipeContact(args: ContactArgs, deps: ToolDependencie
 
     if (abuseC) {
       try {
-        const abuseObjects = ripeObjects(await getRipeJson(deps, `${rir.restBase}/ripe/role/${abuseC}.json`));
-        if (abuseObjects.length > 0) {
-          const abuseObj = abuseObjects[0];
+        const abuseObj = await getRipeObject(deps, abuseC, "role");
+        if (abuseObj) {
           abuseInfo = {
             handle: abuseC,
             role: ripeAttrs(abuseObj, "role")[0] ?? null,
-            emails: ripeAttrs(abuseObj, "e-mail"),
+            emails: uniqueStrings([...ripeAttrs(abuseObj, "e-mail"), ...ripeAttrs(abuseObj, "abuse-mailbox")]),
             phones: ripeAttrs(abuseObj, "phone"),
             remarks: ripeAttrs(abuseObj, "remarks")
           };
@@ -149,13 +164,13 @@ export async function handleRipeContact(args: ContactArgs, deps: ToolDependencie
     ] as const) {
       for (const handle of ripeAttrs(orgObj, contactType)) {
         try {
-          const contactObjects = ripeObjects(await getRipeJson(deps, `${rir.restBase}/ripe/person/${handle}.json`));
-          if (contactObjects.length > 0) {
-            const contactObj = contactObjects[0];
+          const contactObj = await getRipeObject(deps, handle, "person");
+          if (contactObj) {
             target.push({
               handle,
               person: ripeAttrs(contactObj, "person")[0] ?? null,
-              emails: ripeAttrs(contactObj, "e-mail"),
+              role: ripeAttrs(contactObj, "role")[0] ?? null,
+              emails: uniqueStrings([...ripeAttrs(contactObj, "e-mail"), ...ripeAttrs(contactObj, "abuse-mailbox")]),
               phones: ripeAttrs(contactObj, "phone"),
               remarks: ripeAttrs(contactObj, "remarks")
             });
