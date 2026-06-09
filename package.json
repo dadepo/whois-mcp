@@ -10,8 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "node bin/choose-transport.js dev",
-    "dev:stdio": "tsx ts/src/index.ts",
-    "dev:http": "tsx ts/src/http.ts",
+    "dev:stdio": "tsx src/index.ts",
+    "dev:http": "tsx src/http.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -9,11 +9,11 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "rootDir": "ts/src",
+    "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["ts/src/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
