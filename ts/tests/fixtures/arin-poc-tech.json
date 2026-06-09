@@ -1,0 +1,17 @@
+{
+  "poc": {
+    "companyName": { "$": "ARIN Tech" },
+    "contactType": { "$": "Role" },
+    "emails": {
+      "email": [
+        { "$": "tech1@example.com" },
+        { "$": "tech2@example.com" }
+      ]
+    },
+    "phones": {
+      "phone": [
+        { "$": "+1-555-1000" }
+      ]
+    }
+  }
+}

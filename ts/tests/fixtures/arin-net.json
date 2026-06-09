@@ -1,0 +1,24 @@
+{
+  "net": {
+    "orgRef": {
+      "@handle": "EXAMPLE",
+      "@name": "Example ARIN Org"
+    },
+    "pocLinks": {
+      "pocLinkRef": [
+        {
+          "@handle": "ABUSE-ARIN",
+          "@function": "Abuse"
+        },
+        {
+          "@handle": "TECH-ARIN",
+          "@function": "Tech"
+        },
+        {
+          "@handle": "NOC-ARIN",
+          "@function": "NOC"
+        }
+      ]
+    }
+  }
+}

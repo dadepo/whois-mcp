@@ -1,0 +1,10 @@
+{
+  "poc": {
+    "contactName": { "$": "ARIN NOC" },
+    "contactType": { "$": "Role" },
+    "emails": {
+      "email": { "$": "noc@example.com" }
+    },
+    "phones": {}
+  }
+}

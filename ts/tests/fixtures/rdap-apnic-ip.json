@@ -1,0 +1,32 @@
+{
+  "objectClassName": "ip network",
+  "handle": "NET-EXAMPLE",
+  "name": "Example APNIC Network",
+  "country": "AU",
+  "entities": [
+    {
+      "handle": "ABUSE1-AP",
+      "roles": ["abuse"],
+      "vcardArray": [
+        "vcard",
+        [
+          ["fn", {}, "text", "Example Abuse"],
+          ["email", {}, "text", "abuse@example.net"],
+          ["tel", {}, "text", "+61-1-1111"],
+          ["adr", { "label": "1 Example Street" }, "text", ["", "", "", "", "", "", ""]]
+        ]
+      ]
+    },
+    {
+      "handle": "TECH1-AP",
+      "roles": ["technical", "administrative"],
+      "vcardArray": [
+        "vcard",
+        [
+          ["fn", {}, "text", "Example Tech"],
+          ["email", {}, "text", "tech@example.net"]
+        ]
+      ]
+    }
+  ]
+}
