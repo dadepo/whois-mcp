@@ -15,6 +15,7 @@ export class HttpStatusError extends Error {
 
 export interface JsonHttpClient {
   getJson(url: string, options?: { notFoundValue?: unknown; headers?: Record<string, string> }): Promise<unknown>;
+  getText(url: string, options?: { notFoundValue?: string; headers?: Record<string, string> }): Promise<string>;
 }
 
 export class FetchJsonHttpClient implements JsonHttpClient {
@@ -39,6 +40,26 @@ export class FetchJsonHttpClient implements JsonHttpClient {
     }
 
     return JSON.parse(response.text) as unknown;
+  }
+
+  async getText(url: string, options: { notFoundValue?: string; headers?: Record<string, string> } = {}): Promise<string> {
+    const response = await getText(url, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        ...(options.headers ?? {})
+      },
+      redirectsRemaining: 5
+    });
+
+    if (response.status === 404 && "notFoundValue" in options) {
+      return options.notFoundValue ?? "";
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new HttpStatusError(response.status, response.statusText, url);
+    }
+
+    return response.text;
   }
 }
 

@@ -13,6 +13,10 @@ describe("registeredToolNames", () => {
         lacnic: true
       })
     ).toEqual([
+      "whois_auth_status",
+      "whois_authenticated_resource_inventory",
+      "whois_authenticated_object_lookup",
+      "whois_data_quality_audit",
       "ripe_whois_query",
       "ripe_expand_as_set",
       "ripe_validate_route_object",
@@ -39,6 +43,15 @@ describe("registeredToolNames", () => {
         afrinic: false,
         lacnic: false
       })
-    ).toEqual(["arin_whois_query", "arin_validate_route_object", "arin_expand_as_set", "arin_contact_card"]);
+    ).toEqual([
+      "whois_auth_status",
+      "whois_authenticated_resource_inventory",
+      "whois_authenticated_object_lookup",
+      "whois_data_quality_audit",
+      "arin_whois_query",
+      "arin_validate_route_object",
+      "arin_expand_as_set",
+      "arin_contact_card"
+    ]);
   });
 });

@@ -24,6 +24,24 @@ export class FakeHttpClient {
     }
     throw new Error(`Unexpected URL: ${url}`);
   }
+
+  async getText(url: string, options: { notFoundValue?: string; headers?: Record<string, string> } = {}): Promise<string> {
+    this.calls.push({ url, headers: options.headers });
+    const response = this.responses.get(url);
+    if (response instanceof Error) {
+      throw response;
+    }
+    if (typeof response === "string") {
+      return response;
+    }
+    if (response !== undefined) {
+      return JSON.stringify(response);
+    }
+    if ("notFoundValue" in options) {
+      return options.notFoundValue ?? "";
+    }
+    throw new Error(`Unexpected URL: ${url}`);
+  }
 }
 
 export class FakeWhoisClient {

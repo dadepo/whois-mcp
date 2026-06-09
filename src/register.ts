@@ -5,6 +5,7 @@ import type { ToolDependencies } from "./deps.js";
 import { registerArinAsSetTool } from "./tools/arin/as-set.js";
 import { registerArinContactTool } from "./tools/arin/contact.js";
 import { registerArinRouteTool } from "./tools/arin/route.js";
+import { registerAuthTools } from "./tools/auth.js";
 import { registerRdapContactTool } from "./tools/rdap-contact.js";
 import { registerRipeAsSetTool } from "./tools/ripe/as-set.js";
 import { registerRipeContactTool } from "./tools/ripe/contact.js";
@@ -13,7 +14,12 @@ import { registerWhoisTool } from "./tools/whois.js";
 
 export function registeredToolNames(enabled: Partial<Record<RirId, boolean>> = {}): string[] {
   const isEnabled = (rir: RirId): boolean => enabled[rir] ?? RIRS[rir].enabled;
-  const names: string[] = [];
+  const names: string[] = [
+    "whois_auth_status",
+    "whois_authenticated_resource_inventory",
+    "whois_authenticated_object_lookup",
+    "whois_data_quality_audit"
+  ];
 
   if (isEnabled("ripe")) {
     names.push("ripe_whois_query", "ripe_expand_as_set", "ripe_validate_route_object", "ripe_contact_card");
@@ -35,6 +41,8 @@ export function registeredToolNames(enabled: Partial<Record<RirId, boolean>> = {
 }
 
 export function registerTools(server: McpServer, deps: ToolDependencies): void {
+  registerAuthTools(server, deps);
+
   if (RIRS.ripe.enabled) {
     registerWhoisTool(server, RIRS.ripe, deps);
     registerRipeAsSetTool(server, deps);
