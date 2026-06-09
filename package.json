@@ -1,5 +1,5 @@
 {
-  "name": "whois-mcp-typescript-port",
+  "name": "whois-mcp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
