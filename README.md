@@ -1,99 +1,142 @@
 # whois-mcp
 
-A **Model Context Protocol (MCP) server** that provides LLMs with network information lookup tools through WHOIS and RIPE Database queries.
+A Model Context Protocol (MCP) server that gives MCP clients WHOIS, RDAP, IRR route-object, AS-SET, and abuse-contact lookup tools for the five Regional Internet Registries.
+
+This project currently runs from a local checkout. It has not been published to npm yet.
 
 ## Features
 
-### Available Tools
-- **`whois_query`** - Query WHOIS servers for domains, IPs, and ASNs
-- **`expand_as_set`** - Recursively expand AS-SETs into concrete ASN lists
-- **`validate_route_object`** - Check IRR route/route6 object existence
-- **`contact_card`** - Fetch abuse, admin, and technical contacts
+### RIR Coverage
 
-### Regional Internet Registry (RIR) Support
+| Tool category | RIPE NCC | ARIN | APNIC | AfriNIC | LACNIC |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Raw WHOIS query | Yes | Yes | Yes | Yes | Yes |
+| Contact card | Yes | Yes | Yes | Yes | Yes |
+| Route object validation | Yes | Yes | No | No | No |
+| AS-SET expansion | Yes | Yes | No | No | No |
 
-This MCP server supports all five Regional Internet Registries (RIRs) with varying tool availability:
+Tools are registered with RIR prefixes, for example:
 
-| Tool | RIPE NCC | ARIN | APNIC | AfriNIC | LACNIC |
-|------|:--------:|:----:|:-----:|:-------:|:------:|
-| **WHOIS Query** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **AS-SET Expansion** | ✅ | ✅ | ➖ | ➖ | ➖ |
-| **Route Validation** | ✅ | ✅ | ➖ | ➖ | ➖ |
-| **Contact Card** | ✅ | ✅ | ✅ | ✅ | ✅ |
+- `arin_whois_query`
+- `ripe_validate_route_object`
+- `ripe_expand_as_set`
+- `apnic_contact_card`
+- `afrinic_contact_card`
+- `lacnic_contact_card`
 
-**Legend:**
-- ✅ Fully supported via REST/RDAP APIs
-- ➖ Not available (no public API; use `{rir}_whois_query` and parse output instead)
+### Registry Regions
 
-**RIR Coverage:**
-- **RIPE NCC** : Europe, Middle East, Central Asia
-- **ARIN** : North America
-- **APNIC** : Asia-Pacific
-- **AfriNIC** : Africa
-- **LACNIC** : Latin America & Caribbean
+- RIPE NCC: Europe, Middle East, Central Asia
+- ARIN: North America
+- APNIC: Asia-Pacific
+- AfriNIC: Africa
+- LACNIC: Latin America and Caribbean
 
-## Usage
+## Local Setup
 
-This MCP server supports two transport modes:
-- **Stdio mode** (recommended for Claude Desktop and Claude Code CLI)
-- **HTTP server mode** (for web-based clients and remote access)
+Install dependencies from the local checkout:
 
-### With Claude Desktop
+```bash
+git clone https://github.com/dadepo/whois-mcp.git
+cd whois-mcp
+npm ci
+```
 
-Add to your Claude Desktop configuration file:
+Optional local configuration:
 
-**Location:**
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
+```bash
+cp env.example .env
+```
 
-**Configuration:**
+All RIRs are enabled by default. Edit `.env` only when you want to disable a registry or change timeouts/HTTP bind settings.
+
+## Running Locally
+
+This MCP server supports two transports:
+
+- stdio: for clients that launch the process and communicate over stdin/stdout
+- HTTP: for clients that connect to an HTTP endpoint
+
+There is no default transport. Choose one explicitly.
+
+### Stdio Transport
+
+For development:
+
+```bash
+npm --silent run dev:stdio
+```
+
+For MCP client configuration, prefer the local bin script after `npm ci`:
+
+```bash
+/absolute/path/to/whois-mcp/bin/whois-mcp.js
+```
+
+The bin script runs the TypeScript source through the local `tsx` dependency.
+
+### HTTP Transport
+
+Start the HTTP MCP server:
+
+```bash
+npm run dev:http
+```
+
+The HTTP endpoint is:
+
+```text
+http://127.0.0.1:8000/mcp
+```
+
+Override the bind address or port when needed:
+
+```bash
+HTTP_HOST=0.0.0.0 HTTP_PORT=9000 npm run dev:http
+```
+
+## Claude Code Setup
+
+From this repository directory, add the stdio server:
+
+```bash
+claude mcp add --transport stdio whois-mcp -- npm --silent run dev:stdio
+```
+
+Alternatively, use the absolute local bin path:
+
+```bash
+claude mcp add --transport stdio whois-mcp -- /absolute/path/to/whois-mcp/bin/whois-mcp.js
+```
+
+For HTTP mode, start the HTTP server first and then add:
+
+```bash
+claude mcp add --transport http whois-mcp-http http://127.0.0.1:8000/mcp
+```
+
+## Claude Desktop Setup
+
+After `npm ci`, add a stdio server that points at your local checkout:
+
 ```json
 {
   "mcpServers": {
     "whois-mcp": {
-      "command": "/path/to/bin/uvx",
-      "args": ["--from", "git+https://github.com/dadepo/whois-mcp.git", "whois-mcp"]
+      "command": "/absolute/path/to/whois-mcp/bin/whois-mcp.js"
     }
   }
 }
 ```
 
-### With Claude Code CLI
+Claude Desktop config locations:
 
-Add the MCP server using the CLI:
-```bash
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
 
-claude mcp add --transport stdio whois-mcp -- uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp
+For HTTP mode:
 
-# Verify it was added
-claude mcp list
-
-# Start Claude Code
-claude
-```
-
-### HTTP Server Mode
-
-For web-based MCP clients or remote access:
-
-**Start the server:**
-```bash
-
-uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp-server
-
-# With custom host/port
-HTTP_HOST=0.0.0.0 HTTP_PORT=9000 uvx --from git+https://github.com/dadepo/whois-mcp.git whois-mcp-server
-```
-
-The server will be available at `http://127.0.0.1:8000/mcp` by default.
-
-**Add to Claude Code (HTTP):**
-```bash
-claude mcp add --transport http whois-mcp-http http://127.0.0.1:8000/mcp
-```
-
-**Add to Claude Desktop (HTTP):**
 ```json
 {
   "mcpServers": {
@@ -106,90 +149,79 @@ claude mcp add --transport http whois-mcp-http http://127.0.0.1:8000/mcp
 
 ## Tool Usage Examples
 
-### Query Network Information
-```
-"What organization owns 8.8.8.8?"
-→ Uses whois_query to retrieve registration details
+```text
+Who owns 8.8.8.8?
 ```
 
-### Expand AS-SETs
-```
-"What ASNs are in AS-HETZNER?"
-→ Uses expand_as_set to list member ASNs
+```text
+Who should I contact about abuse from 1.1.1.1?
 ```
 
-### Validate Route Objects
-```
-"Is there a route object for 185.1.1.0/24 originated by AS61417?"
-→ Uses validate_route_object to check IRR databases
+```text
+Is there a RIPE route object for 193.0.0.0/21 originated by AS3333?
 ```
 
-### Get Contact Information
-```
-"Who should I contact about abuse from AS15169?"
-→ Uses contact_card to retrieve contact details
+```text
+Expand AS-RIPENCC to direct members only.
 ```
 
 ## Configuration
 
-Environment variables (optional):
-```bash
-# Enable/disable RIR support (all default to true)
-SUPPORT_RIPE=true      # RIPE NCC (Europe/Middle East/Central Asia)
-SUPPORT_ARIN=true      # ARIN (North America)
-SUPPORT_APNIC=true     # APNIC (Asia-Pacific)
-SUPPORT_AFRINIC=true   # AfriNIC (Africa)
-SUPPORT_LACNIC=true    # LACNIC (Latin America & Caribbean)
+Environment variables:
 
-# General Configuration
+```bash
+# Enable or disable RIR support. All default to true.
+SUPPORT_RIPE=true
+SUPPORT_ARIN=true
+SUPPORT_APNIC=true
+SUPPORT_AFRINIC=true
+SUPPORT_LACNIC=true
+
+# Timeouts and cache settings.
 HTTP_TIMEOUT_SECONDS=10
 WHOIS_CONNECT_TIMEOUT_SECONDS=5
 WHOIS_READ_TIMEOUT_SECONDS=5
 CACHE_TTL_SECONDS=60
 CACHE_MAX_ITEMS=512
 
-# Custom User-Agent string
-USER_AGENT="whois-mcp/1.0"
+# Custom User-Agent string.
+USER_AGENT=whois-mcp/1.0
 
-# HTTP Server Configuration (only used by whois-mcp-server command)
+# HTTP transport settings.
 HTTP_HOST=127.0.0.1
 HTTP_PORT=8000
 ```
 
-### RIR Support Control
+RIR endpoints are configured in source:
 
-Each RIR can be individually enabled or disabled using environment variables. All RIR endpoints are hardcoded for reliability:
-
-- **RIPE NCC**: `whois.ripe.net`, `https://rest.db.ripe.net`
-- **ARIN**: `whois.arin.net`, `https://whois.arin.net/rest`
-- **APNIC**: `whois.apnic.net`, `https://rdap.apnic.net`
-- **AfriNIC**: `whois.afrinic.net`, `https://rdap.afrinic.net/rdap`
-- **LACNIC**: `whois.lacnic.net`, `https://rdap.lacnic.net/rdap`
-
-Set any `SUPPORT_{RIR}=false` to disable specific RIRs. Tools are prefixed with the RIR name (e.g., `ripe_whois_query`, `arin_whois_query`, `apnic_contact_card`).
+- RIPE NCC: `whois.ripe.net`, `https://rest.db.ripe.net`, `https://rdap.db.ripe.net`
+- ARIN: `whois.arin.net`, `https://whois.arin.net/rest`, `https://rdap.arin.net/registry`
+- APNIC: `whois.apnic.net`, `https://rdap.apnic.net`
+- AfriNIC: `whois.afrinic.net`, `https://rdap.afrinic.net/rdap`
+- LACNIC: `whois.lacnic.net`, `https://rdap.lacnic.net/rdap`
 
 ## Development
 
-### Local Setup
+Run the TypeScript test suite:
 
 ```bash
-# Clone the repository
-git clone https://github.com/dadepo/whois-mcp.git
-cd whois-mcp
-
-# Install dependencies
-uv sync
-
-# Run in stdio mode
-uv run whois-mcp
-
-# Run HTTP server mode
-uv run whois-mcp-server
-
-# Run tests
-uv run pytest
+npm test
 ```
+
+Run type checking:
+
+```bash
+npm run typecheck
+```
+
+Compile TypeScript:
+
+```bash
+npm run build
+```
+
+`npm run dev` intentionally exits with guidance. Use `npm run dev:stdio` or `npm run dev:http` so the transport is explicit.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
