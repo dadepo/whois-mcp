@@ -1,0 +1,14 @@
+{
+  "poc": {
+    "contactName": { "$": "ARIN Abuse" },
+    "contactType": { "$": "Role" },
+    "emails": {
+      "email": { "$": "abuse@example.com" }
+    },
+    "phones": {
+      "phone": {
+        "number": { "$": "+1-555-0000" }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "objects": {
+    "object": [
+      {
+        "attributes": {
+          "attribute": [
+            { "name": "route", "value": "192.0.2.0/24" },
+            { "name": "origin", "value": "AS64496" }
+          ]
+        }
+      },
+      {
+        "attributes": {
+          "attribute": [
+            { "name": "route", "value": "192.0.2.0/24" },
+            { "name": "origin", "value": "AS64497" }
+          ]
+        }
+      }
+    ]
+  }
+}
