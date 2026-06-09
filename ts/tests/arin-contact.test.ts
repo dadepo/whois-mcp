@@ -57,4 +57,58 @@ describe("ARIN contact tool", () => {
       }
     });
   });
+
+  it("falls back to organization POC links when an ARIN net has no direct POC links", async () => {
+    RIRS.arin.enabled = true;
+    const deps = fakeDeps();
+    deps.httpClient.set(`${ARIN_REST_BASE}/ip/8.8.4.4`, {
+      net: {
+        orgRef: {
+          "@handle": "EXAMPLE",
+          "@name": "Example ARIN Org"
+        }
+      }
+    });
+    deps.httpClient.set(`${ARIN_REST_BASE}/org/EXAMPLE/pocs`, {
+      pocs: {
+        pocLinkRef: [
+          {
+            "@handle": "ABUSE-ARIN",
+            "@function": "AB",
+            "@description": "Abuse"
+          },
+          {
+            "@handle": "TECH-ARIN",
+            "@function": "T",
+            "@description": "Tech"
+          }
+        ]
+      }
+    });
+    deps.httpClient.set(`${ARIN_REST_BASE}/poc/ABUSE-ARIN`, arinPocAbuse);
+    deps.httpClient.set(`${ARIN_REST_BASE}/poc/TECH-ARIN`, arinPocTech);
+
+    const result = await handleArinContact({ ip: "8.8.4.4" }, deps);
+
+    expect(result.ok).toBe(true);
+    expect(result).toMatchObject({
+      data: {
+        organization: {
+          key: "EXAMPLE",
+          name: "Example ARIN Org"
+        },
+        abuse: {
+          handle: "ABUSE-ARIN",
+          emails: ["abuse@example.com"],
+          phones: ["+1-555-0000"]
+        },
+        tech_contacts: [
+          {
+            handle: "TECH-ARIN",
+            emails: ["tech1@example.com", "tech2@example.com"]
+          }
+        ]
+      }
+    });
+  });
 });

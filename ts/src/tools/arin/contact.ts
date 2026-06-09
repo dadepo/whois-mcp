@@ -22,8 +22,20 @@ const cache = new TTLCache<string, ToolResult<ArinContactData>>({
   ttlSeconds: 600
 });
 
+interface PocLink {
+  handle: string;
+  function: string;
+  description: string;
+}
+
 async function getJson(deps: ToolDependencies, url: string): Promise<Record<string, unknown>> {
   return asRecord(await deps.httpClient.getJson(url, { notFoundValue: {}, headers: { Accept: "application/json" } }));
+}
+
+function dollarStringList(value: unknown): string[] {
+  return normalizeList(value)
+    .map((item) => dollarString(item) || dollarString(asRecord(item).number))
+    .filter(Boolean);
 }
 
 async function getPocDetails(deps: ToolDependencies, pocHandle: string): Promise<Record<string, unknown> | null> {
@@ -34,25 +46,8 @@ async function getPocDetails(deps: ToolDependencies, pocHandle: string): Promise
     }
 
     const poc = asRecord(pocData.poc);
-    const emailValue = asRecord(asRecord(poc.emails).email);
-    const emails =
-      Array.isArray(asRecord(poc.emails).email)
-        ? asArray(asRecord(poc.emails).email)
-            .map((email) => dollarString(email))
-            .filter(Boolean)
-        : dollarString(emailValue)
-          ? [dollarString(emailValue)]
-          : [];
-
-    const phoneValue = asRecord(asRecord(poc.phones).phone);
-    const phones =
-      Array.isArray(asRecord(poc.phones).phone)
-        ? asArray(asRecord(poc.phones).phone)
-            .map((phone) => dollarString(phone))
-            .filter(Boolean)
-        : dollarString(phoneValue)
-          ? [dollarString(phoneValue)]
-          : [];
+    const emails = dollarStringList(asRecord(poc.emails).email);
+    const phones = dollarStringList(asRecord(poc.phones).phone);
 
     return {
       handle: pocHandle,
@@ -64,6 +59,55 @@ async function getPocDetails(deps: ToolDependencies, pocHandle: string): Promise
   } catch {
     return null;
   }
+}
+
+function extractPocLinks(source: Record<string, unknown>): PocLink[] {
+  const rawPocRefs = asRecord(source.pocLinks).pocLinkRef ?? asRecord(source.pocs).pocLinkRef;
+  return normalizeList(rawPocRefs as Record<string, unknown> | Record<string, unknown>[] | undefined)
+    .map((rawPocRef) => {
+      const pocRef = asRecord(rawPocRef);
+      return {
+        handle: String(pocRef["@handle"] ?? ""),
+        function: String(pocRef["@function"] ?? ""),
+        description: String(pocRef["@description"] ?? "")
+      };
+    })
+    .filter((pocLink) => pocLink.handle);
+}
+
+async function getOrgPocLinks(deps: ToolDependencies, orgHandle: unknown): Promise<PocLink[]> {
+  if (typeof orgHandle !== "string" || !orgHandle) {
+    return [];
+  }
+
+  const orgPocs = await getJson(deps, `${ARIN_REST_BASE}/org/${orgHandle}/pocs`);
+  return extractPocLinks(orgPocs);
+}
+
+function pocLinkRole(pocLink: PocLink): string {
+  return `${pocLink.function} ${pocLink.description}`.toLowerCase();
+}
+
+function isAbusePoc(pocLink: PocLink): boolean {
+  const func = pocLink.function.toLowerCase();
+  return func === "ab" || pocLinkRole(pocLink).includes("abuse");
+}
+
+function isAdminPoc(pocLink: PocLink): boolean {
+  const func = pocLink.function.toLowerCase();
+  const role = pocLinkRole(pocLink);
+  return func === "ad" || role.includes("admin") || role.includes("administrative");
+}
+
+function isTechPoc(pocLink: PocLink): boolean {
+  const func = pocLink.function.toLowerCase();
+  const role = pocLinkRole(pocLink);
+  return func === "t" || role.includes("tech") || role.includes("technical");
+}
+
+function isNocPoc(pocLink: PocLink): boolean {
+  const func = pocLink.function.toLowerCase();
+  return func === "n" || pocLinkRole(pocLink).includes("noc");
 }
 
 export async function handleArinContact(args: ContactArgs, deps: ToolDependencies): Promise<ToolResult<ArinContactData>> {
@@ -153,17 +197,10 @@ export async function handleArinContact(args: ContactArgs, deps: ToolDependencie
     }
 
     const source = "net" in data ? asRecord(data.net) : "asn" in data ? asRecord(data.asn) : asRecord(data.org);
-    const rawPocRefs = asRecord(source.pocLinks).pocLinkRef as Record<string, unknown> | Record<string, unknown>[] | undefined;
-    const pocRefs = normalizeList(rawPocRefs);
-    const pocLinks = pocRefs
-      .map((rawPocRef) => {
-        const pocRef = asRecord(rawPocRef);
-        return {
-          handle: String(pocRef["@handle"] ?? ""),
-          function: String(pocRef["@function"] ?? "")
-        };
-      })
-      .filter((pocLink) => pocLink.handle);
+    let pocLinks = extractPocLinks(source);
+    if (pocLinks.length === 0) {
+      pocLinks = await getOrgPocLinks(deps, organization.key);
+    }
 
     let abuseContact: Record<string, unknown> | null = null;
     const adminContacts: Record<string, unknown>[] = [];
@@ -176,14 +213,13 @@ export async function handleArinContact(args: ContactArgs, deps: ToolDependencie
         continue;
       }
 
-      const func = pocLink.function.toLowerCase();
-      if (func.includes("abuse")) {
+      if (isAbusePoc(pocLink)) {
         abuseContact = details;
-      } else if (func.includes("admin") || func.includes("administrative")) {
+      } else if (isAdminPoc(pocLink)) {
         adminContacts.push(details);
-      } else if (func.includes("tech") || func.includes("technical")) {
+      } else if (isTechPoc(pocLink)) {
         techContacts.push(details);
-      } else if (func.includes("noc")) {
+      } else if (isNocPoc(pocLink)) {
         nocContacts.push(details);
       }
     }

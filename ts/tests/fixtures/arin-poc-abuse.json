@@ -6,7 +6,9 @@
       "email": { "$": "abuse@example.com" }
     },
     "phones": {
-      "phone": { "$": "+1-555-0000" }
+      "phone": {
+        "number": { "$": "+1-555-0000" }
+      }
     }
   }
 }
