@@ -9,8 +9,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "dev": "node bin/choose-transport.js dev",
     "dev:stdio": "tsx ts/src/index.ts",
     "dev:http": "tsx ts/src/http.ts",
+    "start": "node bin/choose-transport.js start",
     "start:stdio": "tsx ts/src/index.ts",
     "start:http": "tsx ts/src/http.ts",
     "test": "vitest run",
