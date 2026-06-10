@@ -41,7 +41,6 @@ interface ObjectLookupArgs {
   rir: RirId;
   object_type: string;
   key: string;
-  redact_sensitive?: boolean | null | undefined;
 }
 
 interface ObjectLookupData {
@@ -50,7 +49,8 @@ interface ObjectLookupData {
   object_type: string;
   key: string;
   endpoint: string;
-  redacted: boolean;
+  local_secrets_redacted: boolean;
+  registry_values_redacted: boolean;
   object: unknown;
 }
 
@@ -138,12 +138,11 @@ export async function handleAuthenticatedObjectLookup(
   deps: ToolDependencies,
   env: AuthEnv = process.env
 ): Promise<ToolResult<ObjectLookupData>> {
-  const redacted = args.redact_sensitive ?? true;
   if (args.rir === "ripe") {
-    return getRipeObject(args.object_type, args.key, redacted, deps, env);
+    return getRipeObject(args.object_type, args.key, deps, env);
   }
   if (args.rir === "arin") {
-    return getArinObject(args.object_type, args.key, redacted, deps, env);
+    return getArinObject(args.object_type, args.key, deps, env);
   }
   return unsupportedRir(args.rir, "authenticated object lookup");
 }
@@ -157,11 +156,7 @@ export async function handleWhoisDataQualityAudit(
     return unsupportedRir(args.rir, "WHOIS data quality audit");
   }
 
-  const lookup = await handleAuthenticatedObjectLookup(
-    { ...args, redact_sensitive: true },
-    deps,
-    env
-  );
+  const lookup = await handleAuthenticatedObjectLookup(args, deps, env);
   if (!lookup.ok) {
     return lookup;
   }
@@ -220,16 +215,11 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_object_lookup",
     {
       description:
-        "Read-only authenticated lookup for a specific WHOIS registry object. Supports RIPE Database REST API and ARIN Reg-RWS. Sensitive fields are redacted by default.",
+        "Read-only authenticated lookup for a specific WHOIS registry object. Supports RIPE Database REST API and ARIN Reg-RWS. Local MCP credential secrets are redacted, but authenticated registry object values are returned as received.",
       inputSchema: {
         rir: rirSchema.describe("RIR to query. Currently implemented for RIPE and ARIN."),
         object_type: z.string().describe("Registry object type, for example organisation, mntner, inetnum, aut-num, route, org, net, poc."),
-        key: z.string().describe("Object key or handle to retrieve."),
-        redact_sensitive: z
-          .boolean()
-          .nullable()
-          .optional()
-          .describe("Whether to redact sensitive fields and known configured secret values. Defaults to true.")
+        key: z.string().describe("Object key or handle to retrieve. Local configured secret values are always redacted if they appear in responses.")
       }
     },
     async (args) => toMcpResult(await handleAuthenticatedObjectLookup(args, deps))
@@ -365,7 +355,6 @@ async function getArinInventory(deps: ToolDependencies, env: AuthEnv): Promise<T
 async function getRipeObject(
   objectType: string,
   key: string,
-  redacted: boolean,
   deps: ToolDependencies,
   env: AuthEnv
 ): Promise<ToolResult<ObjectLookupData>> {
@@ -397,8 +386,9 @@ async function getRipeObject(
         object_type: objectType,
         key,
         endpoint,
-        redacted,
-        object: redacted ? redactRipeObject(redactKnownSecrets(object, env)) : redactKnownSecrets(object, env)
+        local_secrets_redacted: true,
+        registry_values_redacted: false,
+        object: redactKnownSecrets(object, env)
       }
     };
   } catch (error) {
@@ -409,7 +399,6 @@ async function getRipeObject(
 async function getArinObject(
   objectType: string,
   key: string,
-  redacted: boolean,
   deps: ToolDependencies,
   env: AuthEnv
 ): Promise<ToolResult<ObjectLookupData>> {
@@ -445,8 +434,9 @@ async function getArinObject(
         object_type: objectType,
         key,
         endpoint: redactUrlSecrets(url),
-        redacted,
-        object: redacted ? redactKnownSecrets(parseMaybeJson(raw), env) : parseMaybeJson(raw)
+        local_secrets_redacted: true,
+        registry_values_redacted: false,
+        object: redactKnownSecrets(parseMaybeJson(raw), env)
       }
     };
   } catch (error) {
@@ -495,9 +485,9 @@ function auditRipeObject(objectType: string, data: unknown): AuditIssue[] {
   if (authAttrs.length > 0) {
     issues.push({
       severity: "info",
-      code: "sensitive_auth_attributes_redacted",
+      code: "sensitive_auth_attributes_present",
       field: "auth",
-      message: "auth attributes are present and are redacted in authenticated audit output."
+      message: "auth attributes are present in authenticated WHOIS output."
     });
   }
 
@@ -686,36 +676,6 @@ function parseMaybeJson(raw: string): unknown {
   } catch {
     return raw;
   }
-}
-
-function redactRipeObject(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(redactRipeObject);
-  }
-  if (value === null || typeof value !== "object") {
-    return value;
-  }
-
-  const record = value as Record<string, unknown>;
-  const redacted: Record<string, unknown> = {};
-  for (const [key, child] of Object.entries(record)) {
-    if (key === "attribute") {
-      redacted[key] = asArray(child).map((attr) => {
-        const attrRecord = asRecord(attr);
-        if (sensitiveRipeAttribute(stringValue(attrRecord.name))) {
-          return { ...attrRecord, value: "<redacted>" };
-        }
-        return redactRipeObject(attr);
-      });
-    } else {
-      redacted[key] = redactRipeObject(child);
-    }
-  }
-  return redacted;
-}
-
-function sensitiveRipeAttribute(name: string): boolean {
-  return ["auth", "password", "override"].includes(name.toLowerCase());
 }
 
 function redactKnownSecrets(value: unknown, env: AuthEnv): unknown {

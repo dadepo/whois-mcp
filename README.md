@@ -215,6 +215,8 @@ WHOIS_MCP_PROFILE=test
 
 There are no `*_AUTH_ENABLED` flags. A capability is available when its credential is present.
 
+Authenticated lookup tools return registry object values received from the RIR. Local MCP credentials such as API keys are still redacted if they appear in responses or URLs.
+
 ```bash
 # RIPE Database REST API authenticated object lookup, maintained-object inventory, and audit.
 # Accepts either the full Basic header value or the base64 part; "Basic "

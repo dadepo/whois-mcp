@@ -48,7 +48,7 @@ describe("authenticated WHOIS tools", () => {
     expect(JSON.stringify(result.data)).not.toContain("arin-secret");
   });
 
-  it("uses the RIPE test database profile for authenticated object lookup and redacts auth attributes", async () => {
+  it("uses the RIPE test database profile for authenticated object lookup and returns protected registry values", async () => {
     const deps = fakeDeps();
     deps.httpClient.set("https://rest-test.db.ripe.net/test/mntner/TEST-MNT.json?unfiltered", ripeMntner);
 
@@ -64,8 +64,31 @@ describe("authenticated WHOIS tools", () => {
 
     expect(result.ok).toBe(true);
     expect(deps.httpClient.calls[0]?.headers?.Authorization).toBe("Basic encoded-basic-secret");
-    expect(JSON.stringify(result)).not.toContain("should-not-leak");
-    expect(JSON.stringify(result)).toContain("<redacted>");
+    expect(JSON.stringify(result)).toContain("should-not-leak");
+    expect(JSON.stringify(result)).not.toContain("encoded-basic-secret");
+    expect(result.ok && result.data.local_secrets_redacted).toBe(true);
+    expect(result.ok && result.data.registry_values_redacted).toBe(false);
+  });
+
+  it("ignores legacy redaction flags and still returns authenticated registry values", async () => {
+    const deps = fakeDeps();
+    deps.httpClient.set("https://rest-test.db.ripe.net/test/mntner/TEST-MNT.json?unfiltered", ripeMntner);
+
+    const result = await handleAuthenticatedObjectLookup(
+      { rir: "ripe", object_type: "mntner", key: "TEST-MNT", redact_sensitive: false } as Parameters<
+        typeof handleAuthenticatedObjectLookup
+      >[0],
+      deps,
+      {
+        WHOIS_MCP_PROFILE: "test",
+        RIPE_API_KEY: "encoded-basic-secret"
+      }
+    );
+
+    expect(result.ok).toBe(true);
+    expect(JSON.stringify(result)).toContain("should-not-leak");
+    expect(JSON.stringify(result)).not.toContain("encoded-basic-secret");
+    expect(result.ok && result.data.registry_values_redacted).toBe(false);
   });
 
   it("requires credentials for authenticated RIPE lookups", async () => {
@@ -188,7 +211,7 @@ describe("authenticated WHOIS tools", () => {
 
     expect(result.ok).toBe(true);
     expect(result.ok && result.data.summary.errors).toBe(0);
-    expect(result.ok && result.data.issues.map((issue) => issue.code)).toContain("sensitive_auth_attributes_redacted");
+    expect(result.ok && result.data.issues.map((issue) => issue.code)).toContain("sensitive_auth_attributes_present");
     expect(result.ok && result.data.issues.find((issue) => issue.field === "tech-c")).toBeUndefined();
   });
 });
