@@ -14,9 +14,11 @@ This project currently runs from a local checkout. It has not been published to 
 | Contact card | Yes | Yes | Yes | Yes | Yes |
 | Route object validation | Yes | Yes | No | No | No |
 | AS-SET expansion | Yes | Yes | No | No | No |
-| Authenticated object lookup | Yes | Yes | No | No | No |
-| Authenticated resource inventory | Yes | Partial | No | No | No |
-| WHOIS data quality audit | Yes | Yes | No | No | No |
+| Authenticated object lookup | Yes | Yes | Not implemented | Not implemented | Not implemented |
+| Authenticated resource inventory | Yes | Partial | Not implemented | Not implemented | Not implemented |
+| WHOIS data quality audit | Yes | Yes | Not implemented | Not implemented | Not implemented |
+
+`Not implemented` means this server does not yet expose a tested read-only authenticated WHOIS path for that RIR. It does not mean the RIR has no authenticated services.
 
 Tools are registered with RIR prefixes, for example:
 
