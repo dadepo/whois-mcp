@@ -5,7 +5,6 @@ export type AuthCapability = "status" | "inventory" | "object_lookup" | "data_qu
 
 export interface AuthEndpointSet {
   ripeDatabaseRestBase: string;
-  ripeMyResourcesBase: string;
   arinRegRestBase: string;
   apnicRegistryBase: string;
   lacnicRegistrationBase: string;
@@ -39,14 +38,12 @@ const profileAliases: Record<string, WhoisMcpProfile> = {
 const defaultEndpoints: Record<WhoisMcpProfile, AuthEndpointSet> = {
   production: {
     ripeDatabaseRestBase: "https://rest.db.ripe.net/ripe",
-    ripeMyResourcesBase: "https://lirportal.ripe.net/myresources/v1/resources",
     arinRegRestBase: "https://reg.arin.net/rest",
     apnicRegistryBase: "https://nir-api.apnic.net",
     lacnicRegistrationBase: ""
   },
   test: {
     ripeDatabaseRestBase: "https://rest-test.db.ripe.net/test",
-    ripeMyResourcesBase: "https://lirportal.testlab.ripe.net/myresources/v1/resources",
     arinRegRestBase: "https://reg.ote.arin.net/rest",
     apnicRegistryBase: "https://registry-testbed.apnic.net/nir-api",
     lacnicRegistrationBase: ""
@@ -66,7 +63,6 @@ export function authEndpoints(profile: WhoisMcpProfile, env: AuthEnv = process.e
   const defaults = defaultEndpoints[profile];
   return {
     ripeDatabaseRestBase: endpointOverride(env.RIPE_DATABASE_REST_BASE, defaults.ripeDatabaseRestBase),
-    ripeMyResourcesBase: endpointOverride(env.RIPE_MY_RESOURCES_BASE, defaults.ripeMyResourcesBase),
     arinRegRestBase: endpointOverride(env.ARIN_REG_REST_BASE, defaults.arinRegRestBase),
     apnicRegistryBase: endpointOverride(env.APNIC_REGISTRY_BASE, defaults.apnicRegistryBase),
     lacnicRegistrationBase: endpointOverride(env.LACNIC_REGISTRATION_BASE, defaults.lacnicRegistrationBase)
@@ -78,7 +74,6 @@ export function readAuthConfig(env: AuthEnv = process.env): AuthConfig {
   const endpoints = authEndpoints(profile, env);
 
   const ripeHasDatabaseKey = hasValue(env.RIPE_API_KEY);
-  const ripeHasInventoryKey = hasValue(env.RIPE_MY_RESOURCES_API_KEY);
   const arinHasApiKey = hasValue(env.ARIN_API_KEY);
   const apnicHasToken = hasValue(env.APNIC_ACCESS_TOKEN) || (hasValue(env.APNIC_CLIENT_ID) && hasValue(env.APNIC_CLIENT_SECRET));
   const lacnicHasToken = hasValue(env.LACNIC_ACCESS_TOKEN) || (hasValue(env.LACNIC_CLIENT_ID) && hasValue(env.LACNIC_CLIENT_SECRET));
@@ -89,21 +84,14 @@ export function readAuthConfig(env: AuthEnv = process.env): AuthConfig {
       ripe: {
         rir: "ripe",
         label: "RIPE NCC",
-        configured_credentials: [
-          ...(ripeHasDatabaseKey ? ["RIPE_API_KEY"] : []),
-          ...(ripeHasInventoryKey ? ["RIPE_MY_RESOURCES_API_KEY"] : [])
-        ],
-        missing_credentials: [
-          ...(!ripeHasDatabaseKey ? ["RIPE_API_KEY"] : []),
-          ...(!ripeHasInventoryKey ? ["RIPE_MY_RESOURCES_API_KEY"] : [])
-        ],
+        configured_credentials: ripeHasDatabaseKey ? ["RIPE_API_KEY"] : [],
+        missing_credentials: ripeHasDatabaseKey ? [] : ["RIPE_API_KEY"],
         endpoints: {
-          database_rest: endpoints.ripeDatabaseRestBase,
-          my_resources: endpoints.ripeMyResourcesBase
+          database_rest: endpoints.ripeDatabaseRestBase
         },
         capabilities: {
           status: "available",
-          inventory: ripeHasInventoryKey ? "available" : "missing_credentials",
+          inventory: ripeHasDatabaseKey ? "available" : "missing_credentials",
           object_lookup: ripeHasDatabaseKey ? "available" : "missing_credentials",
           data_quality_audit: ripeHasDatabaseKey ? "available" : "missing_credentials"
         }

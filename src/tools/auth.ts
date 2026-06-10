@@ -25,7 +25,8 @@ interface AuthStatusData extends AuthConfig {
 
 interface InventoryArgs {
   rir?: RirId | null | undefined;
-  dataset?: string | null | undefined;
+  maintainer?: string | null | undefined;
+  object_types?: string[] | null | undefined;
 }
 
 interface InventoryData {
@@ -81,18 +82,6 @@ interface DataQualityAuditData {
 
 const rirSchema = z.enum(["ripe", "arin", "apnic", "afrinic", "lacnic"]);
 
-const ripeInventoryDatasets: Record<string, { label: string; path: string }> = {
-  all: { label: "all", path: "" },
-  asn: { label: "asn", path: "asn" },
-  "ipv4-allocations": { label: "ipv4-allocations", path: "ipv4/allocations" },
-  "ipv4-assignments": { label: "ipv4-assignments", path: "ipv4/assignments" },
-  "ipv4-legacy": { label: "ipv4-legacy", path: "ipv4/erxresources" },
-  ipv4: { label: "ipv4", path: "ipv4" },
-  "ipv6-allocations": { label: "ipv6-allocations", path: "ipv6/allocations" },
-  "ipv6-assignments": { label: "ipv6-assignments", path: "ipv6/assignments" },
-  ipv6: { label: "ipv6", path: "ipv6" }
-};
-
 const arinInventorySources: Array<{ objectType: string; envKey: string; path: string }> = [
   { objectType: "org", envKey: "ARIN_INVENTORY_ORG_HANDLES", path: "org" },
   { objectType: "net", envKey: "ARIN_INVENTORY_NET_HANDLES", path: "net" },
@@ -136,7 +125,7 @@ export async function handleAuthenticatedInventory(
 ): Promise<ToolResult<InventoryData>> {
   const rir = args.rir ?? "ripe";
   if (rir === "ripe") {
-    return getRipeInventory(args.dataset ?? "all", deps, env);
+    return getRipeInventory(args.maintainer, args.object_types, deps, env);
   }
   if (rir === "arin") {
     return getArinInventory(deps, env);
@@ -209,16 +198,19 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_resource_inventory",
     {
       description:
-        "Read-only authenticated resource inventory. RIPE uses the My Resources API. ARIN reads configured inventory handles through Reg-RWS. Unsupported RIRs return an explicit not_supported result.",
+        "Read-only authenticated WHOIS resource inventory. RIPE lists objects maintained by a mntner using an authenticated RIPE Database inverse lookup. ARIN reads configured inventory handles through Reg-RWS. Unsupported RIRs return an explicit not_supported result.",
       inputSchema: {
         rir: rirSchema.nullable().optional().describe("RIR to query. Defaults to RIPE. Currently implemented for RIPE and ARIN."),
-        dataset: z
+        maintainer: z
           .string()
           .nullable()
           .optional()
-          .describe(
-            "RIPE inventory dataset. Supported: all, asn, ipv4, ipv4-allocations, ipv4-assignments, ipv4-legacy, ipv6, ipv6-allocations, ipv6-assignments."
-          )
+          .describe("RIPE mntner name to inventory by inverse mnt-by lookup, for example DADEPO-TEST-MNT."),
+        object_types: z
+          .array(z.string())
+          .nullable()
+          .optional()
+          .describe("Optional RIPE object type filters, for example ['mntner', 'person', 'role', 'organisation'].")
       }
     },
     async (args) => toMcpResult(await handleAuthenticatedInventory(args, deps))
@@ -259,7 +251,8 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
 }
 
 async function getRipeInventory(
-  requestedDataset: string,
+  maintainer: string | null | undefined,
+  objectTypes: string[] | null | undefined,
   deps: ToolDependencies,
   env: AuthEnv
 ): Promise<ToolResult<InventoryData>> {
@@ -270,33 +263,35 @@ async function getRipeInventory(
     return invalidProfile(error);
   }
 
-  const apiKey = secretValue("RIPE_MY_RESOURCES_API_KEY", env);
-  if (!apiKey) {
-    return missingCredential("RIPE_MY_RESOURCES_API_KEY", "RIPE authenticated resource inventory");
+  const authHeader = ripeAuthorizationHeader(env);
+  if (!authHeader) {
+    return missingCredential("RIPE_API_KEY", "RIPE authenticated resource inventory");
   }
 
-  const normalizedDataset = requestedDataset.trim().toLowerCase() || "all";
-  const dataset = ripeInventoryDatasets[normalizedDataset];
-  if (!dataset) {
+  const normalizedMaintainer = maintainer?.trim();
+  if (!normalizedMaintainer) {
     return {
       ok: false,
       error: "bad_request",
-      detail: `Unsupported RIPE inventory dataset '${requestedDataset}'.`
+      detail: "RIPE authenticated resource inventory requires a maintainer name for inverse mnt-by lookup."
     };
   }
 
   const endpoints = authEndpoints(profile, env);
-  const endpoint = withQuery(appendPath(endpoints.ripeMyResourcesBase, dataset.path), "format=JSON");
+  const endpoint = ripeSearchEndpoint(endpoints.ripeDatabaseRestBase, normalizedMaintainer, objectTypes ?? []);
   try {
     const records = await deps.httpClient.getJson(endpoint, {
-      headers: { "ncc-api-authorization": apiKey }
+      headers: {
+        Accept: "application/json",
+        Authorization: authHeader
+      }
     });
     return {
       ok: true,
       data: {
         profile,
         rir: "ripe",
-        dataset: dataset.label,
+        dataset: `mnt-by:${normalizedMaintainer}`,
         records: redactKnownSecrets(records, env),
         endpoint
       }
@@ -668,13 +663,17 @@ function joinUrl(base: string, ...segments: string[]): string {
   return path ? `${trimmedBase}/${path}` : trimmedBase;
 }
 
-function appendPath(base: string, path: string): string {
-  const trimmedBase = base.replace(/\/+$/, "");
-  const trimmedPath = path.replace(/^\/+|\/+$/g, "");
-  if (!trimmedPath) {
-    return trimmedBase;
+function ripeSearchEndpoint(databaseRestBase: string, maintainer: string, objectTypes: string[]): string {
+  const baseUrl = new URL(databaseRestBase);
+  const source = baseUrl.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).at(-1) ?? "ripe";
+  const params = new URLSearchParams();
+  params.set("inverse-attribute", "mnt-by");
+  params.set("source", source);
+  params.set("query-string", maintainer);
+  for (const objectType of objectTypes.map((value) => value.trim()).filter(Boolean)) {
+    params.append("type-filter", objectType);
   }
-  return `${trimmedBase}/${trimmedPath.split("/").map(encodeURIComponent).join("/")}`;
+  return `${baseUrl.origin}/search.json?${params.toString()}`;
 }
 
 function withQuery(url: string, query: string): string {
@@ -722,7 +721,6 @@ function sensitiveRipeAttribute(name: string): boolean {
 function redactKnownSecrets(value: unknown, env: AuthEnv): unknown {
   const secrets = [
     "RIPE_API_KEY",
-    "RIPE_MY_RESOURCES_API_KEY",
     "ARIN_API_KEY",
     "APNIC_ACCESS_TOKEN",
     "APNIC_CLIENT_SECRET",

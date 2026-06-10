@@ -82,28 +82,54 @@ describe("authenticated WHOIS tools", () => {
     });
   });
 
-  it("fetches RIPE My Resources inventory with the inventory API key", async () => {
+  it("fetches RIPE maintained-object inventory with the database API key", async () => {
     const deps = fakeDeps();
-    const inventoryUrl = "https://lirportal.testlab.ripe.net/myresources/v1/resources/ipv4/allocations?format=JSON";
+    const inventoryUrl =
+      "https://rest-test.db.ripe.net/search.json?inverse-attribute=mnt-by&source=test&query-string=TEST-MNT&type-filter=mntner&type-filter=organisation";
     deps.httpClient.set(inventoryUrl, {
-      ipv4Allocations: [{ prefix: "192.0.2.0/24", status: "ALLOCATED_PA" }]
+      objects: {
+        object: [
+          { type: "mntner", primaryKey: "TEST-MNT" },
+          { type: "organisation", primaryKey: "ORG-TST1-TEST" }
+        ]
+      }
     });
 
     const result = await handleAuthenticatedInventory(
-      { rir: "ripe", dataset: "ipv4-allocations" },
+      { rir: "ripe", maintainer: "TEST-MNT", object_types: ["mntner", "organisation"] },
       deps,
       {
         WHOIS_MCP_PROFILE: "test",
-        RIPE_MY_RESOURCES_API_KEY: "inventory-secret"
+        RIPE_API_KEY: "encoded-basic-secret"
       }
     );
 
     expect(result.ok).toBe(true);
     expect(deps.httpClient.calls[0]).toEqual({
       url: inventoryUrl,
-      headers: { "ncc-api-authorization": "inventory-secret" }
+      headers: {
+        Accept: "application/json",
+        Authorization: "Basic encoded-basic-secret"
+      }
     });
-    expect(JSON.stringify(result)).not.toContain("inventory-secret");
+    expect(JSON.stringify(result)).not.toContain("encoded-basic-secret");
+  });
+
+  it("requires a maintainer for RIPE inventory", async () => {
+    const result = await handleAuthenticatedInventory(
+      { rir: "ripe" },
+      fakeDeps(),
+      {
+        WHOIS_MCP_PROFILE: "test",
+        RIPE_API_KEY: "encoded-basic-secret"
+      }
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: "bad_request",
+      detail: "RIPE authenticated resource inventory requires a maintainer name for inverse mnt-by lookup."
+    });
   });
 
   it("redacts ARIN API keys from object lookup output", async () => {

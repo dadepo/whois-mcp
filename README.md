@@ -216,13 +216,10 @@ WHOIS_MCP_PROFILE=test
 There are no `*_AUTH_ENABLED` flags. A capability is available when its credential is present.
 
 ```bash
-# RIPE Database REST API authenticated object lookup and audit.
+# RIPE Database REST API authenticated object lookup, maintained-object inventory, and audit.
 # Accepts either the full Basic header value or the base64 part; "Basic "
 # is added automatically when omitted.
 RIPE_API_KEY=
-
-# RIPE LIR Portal My Resources inventory.
-RIPE_MY_RESOURCES_API_KEY=
 
 # ARIN Reg-RWS authenticated object lookup, audit, and configured inventory.
 ARIN_API_KEY=
@@ -239,7 +236,7 @@ ARIN_INVENTORY_TICKET_NUMBERS=
 
 Current authenticated tool scope:
 
-- RIPE: object lookup, My Resources inventory, and data quality audit.
+- RIPE: object lookup, maintained-object inventory by inverse `mnt-by` lookup, and data quality audit.
 - ARIN: object lookup and data quality audit; inventory works for handles listed in `ARIN_INVENTORY_*`.
 - APNIC, AfriNIC, LACNIC: `whois_auth_status` reports configuration, but authenticated inventory/object/audit calls return `not_supported` until provider-specific read paths are implemented.
 
@@ -247,7 +244,6 @@ Supported endpoint overrides for local testing:
 
 ```bash
 RIPE_DATABASE_REST_BASE=
-RIPE_MY_RESOURCES_BASE=
 ARIN_REG_REST_BASE=
 APNIC_REGISTRY_BASE=
 LACNIC_REGISTRATION_BASE=
