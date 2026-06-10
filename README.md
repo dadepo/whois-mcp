@@ -14,6 +14,9 @@ This project currently runs from a local checkout. It has not been published to 
 | Contact card | Yes | Yes | Yes | Yes | Yes |
 | Route object validation | Yes | Yes | No | No | No |
 | AS-SET expansion | Yes | Yes | No | No | No |
+| Authenticated object lookup | Yes | Yes | No | No | No |
+| Authenticated resource inventory | Yes | Partial | No | No | No |
+| WHOIS data quality audit | Yes | Yes | No | No | No |
 
 Tools are registered with RIR prefixes, for example:
 
@@ -23,6 +26,10 @@ Tools are registered with RIR prefixes, for example:
 - `apnic_contact_card`
 - `afrinic_contact_card`
 - `lacnic_contact_card`
+- `whois_auth_status`
+- `whois_authenticated_object_lookup`
+- `whois_authenticated_resource_inventory`
+- `whois_data_quality_audit`
 
 ### Registry Regions
 
@@ -48,7 +55,7 @@ Optional local configuration:
 cp env.example .env
 ```
 
-All RIRs are enabled by default. Edit `.env` only when you want to disable a registry or change timeouts/HTTP bind settings.
+All public RIR tools are enabled by default. Edit `.env` only when you want to disable a registry, change timeouts/HTTP bind settings, or configure authenticated read-only lookups.
 
 ## Running Locally
 
@@ -170,6 +177,10 @@ Expand AS-RIPENCC to direct members only.
 Environment variables:
 
 ```bash
+# Auth profile. production is the default. Use test to point supported
+# authenticated calls at RIR test environments.
+WHOIS_MCP_PROFILE=production
+
 # Enable or disable RIR support. All default to true.
 SUPPORT_RIPE=true
 SUPPORT_ARIN=true
@@ -191,6 +202,56 @@ USER_AGENT=whois-mcp/1.0
 HTTP_HOST=127.0.0.1
 HTTP_PORT=8000
 ```
+
+### Authenticated Read-Only Tools
+
+Authenticated support uses one global profile:
+
+```bash
+WHOIS_MCP_PROFILE=production
+# or
+WHOIS_MCP_PROFILE=test
+```
+
+There are no `*_AUTH_ENABLED` flags. A capability is available when its credential is present.
+
+Authenticated lookup tools return registry object values received from the RIR. Local MCP credentials such as API keys are still redacted if they appear in responses or URLs.
+
+```bash
+# RIPE Database REST API authenticated object lookup, maintained-object inventory, and audit.
+# Accepts either the full Basic header value or the base64 part; "Basic "
+# is added automatically when omitted.
+RIPE_API_KEY=
+
+# ARIN Reg-RWS authenticated object lookup, audit, and configured inventory.
+ARIN_API_KEY=
+
+# ARIN inventory is read from explicit handles because Reg-RWS does not expose
+# one generic account inventory endpoint through this tool yet.
+ARIN_INVENTORY_ORG_HANDLES=
+ARIN_INVENTORY_NET_HANDLES=
+ARIN_INVENTORY_POC_HANDLES=
+ARIN_INVENTORY_CUSTOMER_HANDLES=
+ARIN_INVENTORY_DELEGATION_NAMES=
+ARIN_INVENTORY_TICKET_NUMBERS=
+```
+
+Current authenticated tool scope:
+
+- RIPE: object lookup, maintained-object inventory by inverse `mnt-by` lookup, and data quality audit.
+- ARIN: object lookup and data quality audit; inventory works for handles listed in `ARIN_INVENTORY_*`.
+- APNIC, AfriNIC, LACNIC: `whois_auth_status` reports configuration, but authenticated inventory/object/audit calls return `not_supported` until provider-specific read paths are implemented.
+
+Supported endpoint overrides for local testing:
+
+```bash
+RIPE_DATABASE_REST_BASE=
+ARIN_REG_REST_BASE=
+APNIC_REGISTRY_BASE=
+LACNIC_REGISTRATION_BASE=
+```
+
+With `WHOIS_MCP_PROFILE=test`, supported authenticated calls use the RIPE TEST DB and ARIN OT&E endpoints by default.
 
 RIR endpoints are configured in source:
 
