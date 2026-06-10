@@ -39,13 +39,13 @@ const defaultEndpoints: Record<WhoisMcpProfile, AuthEndpointSet> = {
   production: {
     ripeDatabaseRestBase: "https://rest.db.ripe.net/ripe",
     arinRegRestBase: "https://reg.arin.net/rest",
-    apnicRegistryBase: "https://nir-api.apnic.net",
+    apnicRegistryBase: "https://registry-api.apnic.net",
     lacnicRegistrationBase: ""
   },
   test: {
     ripeDatabaseRestBase: "https://rest-test.db.ripe.net/test",
     arinRegRestBase: "https://reg.ote.arin.net/rest",
-    apnicRegistryBase: "https://registry-testbed.apnic.net/nir-api",
+    apnicRegistryBase: "https://registry-testbed.apnic.net",
     lacnicRegistrationBase: ""
   }
 };
@@ -75,7 +75,7 @@ export function readAuthConfig(env: AuthEnv = process.env): AuthConfig {
 
   const ripeHasDatabaseKey = hasValue(env.RIPE_API_KEY);
   const arinHasApiKey = hasValue(env.ARIN_API_KEY);
-  const apnicHasToken = hasValue(env.APNIC_ACCESS_TOKEN) || (hasValue(env.APNIC_CLIENT_ID) && hasValue(env.APNIC_CLIENT_SECRET));
+  const apnicHasApiKey = hasValue(env.APNIC_API_KEY);
   const lacnicHasToken = hasValue(env.LACNIC_ACCESS_TOKEN) || (hasValue(env.LACNIC_CLIENT_ID) && hasValue(env.LACNIC_CLIENT_SECRET));
 
   return {
@@ -114,20 +114,16 @@ export function readAuthConfig(env: AuthEnv = process.env): AuthConfig {
       apnic: {
         rir: "apnic",
         label: "APNIC",
-        configured_credentials: [
-          ...(hasValue(env.APNIC_ACCESS_TOKEN) ? ["APNIC_ACCESS_TOKEN"] : []),
-          ...(hasValue(env.APNIC_CLIENT_ID) ? ["APNIC_CLIENT_ID"] : []),
-          ...(hasValue(env.APNIC_CLIENT_SECRET) ? ["APNIC_CLIENT_SECRET"] : [])
-        ],
-        missing_credentials: apnicHasToken ? [] : ["APNIC_ACCESS_TOKEN or APNIC_CLIENT_ID/APNIC_CLIENT_SECRET"],
+        configured_credentials: apnicHasApiKey ? ["APNIC_API_KEY"] : [],
+        missing_credentials: apnicHasApiKey ? [] : ["APNIC_API_KEY"],
         endpoints: {
           registry_api: endpoints.apnicRegistryBase
         },
         capabilities: {
           status: "available",
-          inventory: "not_supported",
-          object_lookup: "not_supported",
-          data_quality_audit: "not_supported"
+          inventory: apnicHasApiKey ? "available" : "missing_credentials",
+          object_lookup: apnicHasApiKey ? "available" : "missing_credentials",
+          data_quality_audit: apnicHasApiKey ? "available" : "missing_credentials"
         }
       },
       afrinic: {
@@ -195,6 +191,14 @@ export function arinUrlWithApiKey(baseUrl: string, env: AuthEnv = process.env): 
   const url = new URL(baseUrl);
   url.searchParams.set("apikey", apiKey);
   return url.toString();
+}
+
+export function apnicAuthorizationHeader(env: AuthEnv = process.env): string | null {
+  const value = secretValue("APNIC_API_KEY", env);
+  if (!value) {
+    return null;
+  }
+  return value.toLowerCase().startsWith("bearer ") ? value : `Bearer ${value}`;
 }
 
 export function redactUrlSecrets(url: string): string {

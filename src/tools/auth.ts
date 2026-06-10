@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as z from "zod/v4";
 
 import {
+  apnicAuthorizationHeader,
   arinUrlWithApiKey,
   authEndpoints,
   envList,
@@ -25,6 +26,7 @@ interface AuthStatusData extends AuthConfig {
 
 interface InventoryArgs {
   rir?: RirId | null | undefined;
+  account?: string | null | undefined;
   maintainer?: string | null | undefined;
   object_types?: string[] | null | undefined;
 }
@@ -32,6 +34,7 @@ interface InventoryArgs {
 interface InventoryData {
   profile: string;
   rir: RirId;
+  account?: string;
   dataset: string;
   records: unknown;
   endpoint: string;
@@ -39,6 +42,7 @@ interface InventoryData {
 
 interface ObjectLookupArgs {
   rir: RirId;
+  account?: string | null | undefined;
   object_type: string;
   key: string;
 }
@@ -46,6 +50,7 @@ interface ObjectLookupArgs {
 interface ObjectLookupData {
   profile: string;
   rir: RirId;
+  account?: string;
   object_type: string;
   key: string;
   endpoint: string;
@@ -56,6 +61,7 @@ interface ObjectLookupData {
 
 interface DataQualityAuditArgs {
   rir: RirId;
+  account?: string | null | undefined;
   object_type: string;
   key: string;
 }
@@ -70,6 +76,7 @@ interface AuditIssue {
 interface DataQualityAuditData {
   profile: string;
   rir: RirId;
+  account?: string;
   object_type: string;
   key: string;
   issues: AuditIssue[];
@@ -99,6 +106,14 @@ const arinObjectPaths: Record<string, string> = {
   delegation: "delegation",
   ticket: "ticket"
 };
+
+const apnicInventorySources: Array<{ dataset: string; path: string[] }> = [
+  { dataset: "delegation-ipv4", path: ["delegation", "ipv4"] },
+  { dataset: "delegation-ipv6", path: ["delegation", "ipv6"] },
+  { dataset: "delegation-autnum", path: ["delegation", "autnum"] },
+  { dataset: "mntner", path: ["mntner"] },
+  { dataset: "irt", path: ["irt"] }
+];
 
 export function handleAuthStatus(env: AuthEnv = process.env): ToolResult<AuthStatusData> {
   try {
@@ -130,6 +145,9 @@ export async function handleAuthenticatedInventory(
   if (rir === "arin") {
     return getArinInventory(deps, env);
   }
+  if (rir === "apnic") {
+    return getApnicInventory(args.account, deps, env);
+  }
   return unsupportedRir(rir, "authenticated resource inventory");
 }
 
@@ -144,6 +162,9 @@ export async function handleAuthenticatedObjectLookup(
   if (args.rir === "arin") {
     return getArinObject(args.object_type, args.key, deps, env);
   }
+  if (args.rir === "apnic") {
+    return getApnicObject(args.account, args.object_type, args.key, deps, env);
+  }
   return unsupportedRir(args.rir, "authenticated object lookup");
 }
 
@@ -152,7 +173,7 @@ export async function handleWhoisDataQualityAudit(
   deps: ToolDependencies,
   env: AuthEnv = process.env
 ): Promise<ToolResult<DataQualityAuditData>> {
-  if (args.rir !== "ripe" && args.rir !== "arin") {
+  if (args.rir !== "ripe" && args.rir !== "arin" && args.rir !== "apnic") {
     return unsupportedRir(args.rir, "WHOIS data quality audit");
   }
 
@@ -163,13 +184,16 @@ export async function handleWhoisDataQualityAudit(
 
   const issues = args.rir === "ripe"
     ? auditRipeObject(args.object_type, lookup.data.object)
-    : auditArinObject(args.object_type, lookup.data.object);
+    : args.rir === "arin"
+      ? auditArinObject(args.object_type, lookup.data.object)
+      : auditApnicObject(args.object_type, lookup.data.object);
 
   return {
     ok: true,
     data: {
       profile: lookup.data.profile,
       rir: args.rir,
+      ...(lookup.data.account ? { account: lookup.data.account } : {}),
       object_type: args.object_type,
       key: args.key,
       issues,
@@ -193,9 +217,14 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_resource_inventory",
     {
       description:
-        "Read-only authenticated WHOIS resource inventory. RIPE lists objects maintained by a mntner using an authenticated RIPE Database inverse lookup. ARIN reads configured inventory handles through Reg-RWS. Unsupported RIRs return an explicit not_supported result.",
+        "Read-only authenticated WHOIS resource inventory. RIPE lists objects maintained by a mntner using an authenticated RIPE Database inverse lookup. ARIN reads configured inventory handles through Reg-RWS. APNIC reads account-scoped Registry API delegations, maintainers, and IRTs.",
       inputSchema: {
-        rir: rirSchema.nullable().optional().describe("RIR to query. Defaults to RIPE. Currently implemented for RIPE and ARIN."),
+        rir: rirSchema.nullable().optional().describe("RIR to query. Defaults to RIPE. Currently implemented for RIPE, ARIN, and APNIC."),
+        account: z
+          .string()
+          .nullable()
+          .optional()
+          .describe("APNIC member account to query. Required for APNIC because APNIC Registry API calls are account-scoped."),
         maintainer: z
           .string()
           .nullable()
@@ -215,9 +244,14 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_object_lookup",
     {
       description:
-        "Read-only authenticated lookup for a specific WHOIS registry object. Supports RIPE Database REST API and ARIN Reg-RWS. Local MCP credential secrets are redacted, but authenticated registry object values are returned as received.",
+        "Read-only authenticated lookup for a specific WHOIS registry object. Supports RIPE Database REST API, ARIN Reg-RWS, and APNIC Registry API. Local MCP credential secrets are redacted, but authenticated registry object values are returned as received.",
       inputSchema: {
-        rir: rirSchema.describe("RIR to query. Currently implemented for RIPE and ARIN."),
+        rir: rirSchema.describe("RIR to query. Currently implemented for RIPE, ARIN, and APNIC."),
+        account: z
+          .string()
+          .nullable()
+          .optional()
+          .describe("APNIC member account to query. Required for APNIC because APNIC Registry API calls are account-scoped."),
         object_type: z.string().describe("Registry object type, for example organisation, mntner, inetnum, aut-num, route, org, net, poc."),
         key: z.string().describe("Object key or handle to retrieve. Local configured secret values are always redacted if they appear in responses.")
       }
@@ -229,9 +263,14 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_data_quality_audit",
     {
       description:
-        "Read-only WHOIS data quality audit for an authenticated RIPE or ARIN object lookup. Reports missing expected fields and risky data-quality gaps without making changes.",
+        "Read-only WHOIS data quality audit for an authenticated RIPE, ARIN, or APNIC object lookup. Reports missing expected fields and risky data-quality gaps without making changes.",
       inputSchema: {
-        rir: rirSchema.describe("RIR to query. Currently implemented for RIPE and ARIN."),
+        rir: rirSchema.describe("RIR to query. Currently implemented for RIPE, ARIN, and APNIC."),
+        account: z
+          .string()
+          .nullable()
+          .optional()
+          .describe("APNIC member account to query. Required for APNIC because APNIC Registry API calls are account-scoped."),
         object_type: z.string().describe("Registry object type to audit."),
         key: z.string().describe("Object key or handle to retrieve and audit.")
       }
@@ -352,6 +391,62 @@ async function getArinInventory(deps: ToolDependencies, env: AuthEnv): Promise<T
   }
 }
 
+async function getApnicInventory(
+  account: string | null | undefined,
+  deps: ToolDependencies,
+  env: AuthEnv
+): Promise<ToolResult<InventoryData>> {
+  let profile;
+  try {
+    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+  } catch (error) {
+    return invalidProfile(error);
+  }
+
+  const authHeader = apnicAuthorizationHeader(env);
+  if (!authHeader) {
+    return missingCredential("APNIC_API_KEY", "APNIC authenticated resource inventory");
+  }
+
+  const normalizedAccount = normalizedApnicAccount(account);
+  if (!normalizedAccount) {
+    return missingApnicAccount("APNIC authenticated resource inventory");
+  }
+
+  const endpointBase = authEndpoints(profile, env).apnicRegistryBase;
+  try {
+    const records = [];
+    for (const source of apnicInventorySources) {
+      const endpoint = apnicEndpoint(endpointBase, normalizedAccount, ...source.path);
+      const object = await deps.httpClient.getJson(endpoint, {
+        headers: {
+          Accept: "application/json",
+          Authorization: authHeader
+        }
+      });
+      records.push({
+        dataset: source.dataset,
+        endpoint,
+        object: redactKnownSecrets(object, env)
+      });
+    }
+
+    return {
+      ok: true,
+      data: {
+        profile,
+        rir: "apnic",
+        account: normalizedAccount,
+        dataset: `account:${normalizedAccount}`,
+        records,
+        endpoint: endpointBase
+      }
+    };
+  } catch (error) {
+    return lookupError(error);
+  }
+}
+
 async function getRipeObject(
   objectType: string,
   key: string,
@@ -444,6 +539,57 @@ async function getArinObject(
   }
 }
 
+async function getApnicObject(
+  account: string | null | undefined,
+  objectType: string,
+  key: string,
+  deps: ToolDependencies,
+  env: AuthEnv
+): Promise<ToolResult<ObjectLookupData>> {
+  let profile;
+  try {
+    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+  } catch (error) {
+    return invalidProfile(error);
+  }
+
+  const authHeader = apnicAuthorizationHeader(env);
+  if (!authHeader) {
+    return missingCredential("APNIC_API_KEY", "APNIC authenticated object lookup");
+  }
+
+  const normalizedAccount = normalizedApnicAccount(account);
+  if (!normalizedAccount) {
+    return missingApnicAccount("APNIC authenticated object lookup");
+  }
+
+  const endpoint = apnicEndpoint(authEndpoints(profile, env).apnicRegistryBase, normalizedAccount, "whois", objectType, key);
+  try {
+    const object = await deps.httpClient.getJson(endpoint, {
+      headers: {
+        Accept: "application/json",
+        Authorization: authHeader
+      }
+    });
+    return {
+      ok: true,
+      data: {
+        profile,
+        rir: "apnic",
+        account: normalizedAccount,
+        object_type: objectType,
+        key,
+        endpoint,
+        local_secrets_redacted: true,
+        registry_values_redacted: false,
+        object: redactKnownSecrets(object, env)
+      }
+    };
+  } catch (error) {
+    return lookupError(error);
+  }
+}
+
 function auditRipeObject(objectType: string, data: unknown): AuditIssue[] {
   const objects = ripeObjects(data);
   if (objects.length === 0) {
@@ -496,6 +642,61 @@ function auditRipeObject(objectType: string, data: unknown): AuditIssue[] {
       severity: "info",
       code: "no_basic_issues_found",
       message: "No basic RIPE data-quality issues were found by the read-only audit rules."
+    });
+  }
+  return issues;
+}
+
+function auditApnicObject(objectType: string, data: unknown): AuditIssue[] {
+  const attrs = apnicAttributeMap(data);
+  if (attrs.size === 0) {
+    return [
+      {
+        severity: "error",
+        code: "object_not_found_in_response",
+        message: "The APNIC response did not contain a WHOIS object with attributes."
+      }
+    ];
+  }
+
+  const issues: AuditIssue[] = [];
+  const required = apnicRequiredAttributes(objectType.toLowerCase());
+  for (const attr of required) {
+    if (!attrs.has(attr)) {
+      issues.push({
+        severity: "error",
+        code: "missing_required_attribute",
+        field: attr,
+        message: `Missing expected APNIC attribute '${attr}'.`
+      });
+    }
+  }
+
+  if (["organisation", "aut-num", "inetnum", "inet6num"].includes(objectType.toLowerCase())) {
+    if (!attrs.has("mnt-irt") && !attrs.has("abuse-c")) {
+      issues.push({
+        severity: "warning",
+        code: "missing_abuse_or_irt_reference",
+        field: "mnt-irt",
+        message: "No mnt-irt or abuse-c reference is present on this APNIC object."
+      });
+    }
+  }
+
+  if (attrs.has("auth")) {
+    issues.push({
+      severity: "info",
+      code: "sensitive_auth_attributes_present",
+      field: "auth",
+      message: "auth attributes are present in authenticated WHOIS output."
+    });
+  }
+
+  if (issues.length === 0) {
+    issues.push({
+      severity: "info",
+      code: "no_basic_issues_found",
+      message: "No basic APNIC data-quality issues were found by the read-only audit rules."
     });
   }
   return issues;
@@ -554,6 +755,24 @@ function auditArinObject(objectType: string, data: unknown): AuditIssue[] {
   return issues;
 }
 
+function apnicRequiredAttributes(objectType: string): string[] {
+  const common = ["mnt-by", "source"];
+  const byType: Record<string, string[]> = {
+    organisation: ["organisation", "org-name", "org-type", "address", "e-mail", "mnt-ref", ...common],
+    inetnum: ["inetnum", "netname", "descr", "country", "admin-c", "tech-c", "status", ...common],
+    inet6num: ["inet6num", "netname", "descr", "country", "admin-c", "tech-c", "status", ...common],
+    "aut-num": ["aut-num", "as-name", "descr", "country", "admin-c", "tech-c", ...common],
+    mntner: ["mntner", "admin-c", "upd-to", "auth", ...common],
+    route: ["route", "origin", ...common],
+    route6: ["route6", "origin", ...common],
+    "as-set": ["as-set", "descr", "admin-c", "tech-c", ...common],
+    person: ["person", "address", "phone", "e-mail", "nic-hdl", ...common],
+    role: ["role", "address", "e-mail", "nic-hdl", ...common],
+    irt: ["irt", "address", "e-mail", "abuse-mailbox", ...common]
+  };
+  return byType[objectType] ?? common;
+}
+
 function ripeRequiredAttributes(objectType: string): string[] {
   const common = ["mnt-by", "source"];
   const byType: Record<string, string[]> = {
@@ -569,6 +788,21 @@ function ripeRequiredAttributes(objectType: string): string[] {
     role: ["role", "nic-hdl", ...common]
   };
   return byType[objectType] ?? common;
+}
+
+function apnicAttributeMap(data: unknown): Map<string, string[]> {
+  const attrs = asArray(asRecord(data).attributes);
+  const mapped = new Map<string, string[]>();
+  for (const attr of attrs) {
+    const record = asRecord(attr);
+    const name = stringValue(record.name).trim().toLowerCase();
+    const value = stringValue(record.value);
+    if (!name) {
+      continue;
+    }
+    mapped.set(name, [...(mapped.get(name) ?? []), value]);
+  }
+  return mapped;
 }
 
 function hasArinPocLinks(root: Record<string, unknown>): boolean {
@@ -628,6 +862,14 @@ function missingCredential<T>(credential: string, capability: string): ToolResul
   };
 }
 
+function missingApnicAccount<T>(capability: string): ToolResult<T> {
+  return {
+    ok: false,
+    error: "bad_request",
+    detail: `${capability} requires an APNIC member account. APNIC Registry API calls are account-scoped, so include the account in the prompt or tool arguments.`
+  };
+}
+
 function invalidProfile<T>(error: unknown): ToolResult<T> {
   return {
     ok: false,
@@ -644,6 +886,11 @@ function lookupError<T>(error: unknown): ToolResult<T> {
   };
 }
 
+function normalizedApnicAccount(account: string | null | undefined): string | null {
+  const normalized = account?.trim();
+  return normalized ? normalized : null;
+}
+
 function joinUrl(base: string, ...segments: string[]): string {
   const trimmedBase = base.replace(/\/+$/, "");
   const path = segments
@@ -651,6 +898,13 @@ function joinUrl(base: string, ...segments: string[]): string {
     .map((segment) => encodeURIComponent(segment))
     .join("/");
   return path ? `${trimmedBase}/${path}` : trimmedBase;
+}
+
+function apnicEndpoint(base: string, account: string, ...segments: string[]): string {
+  const parsed = new URL(base);
+  const path = parsed.pathname.replace(/\/+$/, "");
+  const pathSegments = path.endsWith("/v1") ? [account, ...segments] : ["v1", account, ...segments];
+  return joinUrl(base, ...pathSegments);
 }
 
 function ripeSearchEndpoint(databaseRestBase: string, maintainer: string, objectTypes: string[]): string {
@@ -682,8 +936,7 @@ function redactKnownSecrets(value: unknown, env: AuthEnv): unknown {
   const secrets = [
     "RIPE_API_KEY",
     "ARIN_API_KEY",
-    "APNIC_ACCESS_TOKEN",
-    "APNIC_CLIENT_SECRET",
+    "APNIC_API_KEY",
     "LACNIC_ACCESS_TOKEN",
     "LACNIC_CLIENT_SECRET"
   ]
