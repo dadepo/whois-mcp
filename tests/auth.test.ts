@@ -17,7 +17,7 @@ const ripeMntner = {
           attribute: [
             { name: "mntner", value: "TEST-MNT" },
             { name: "admin-c", value: "AA1-TEST" },
-            { name: "tech-c", value: "AA1-TEST" },
+            { name: "upd-to", value: "ops@example.test" },
             { name: "auth", value: "SSO should-not-leak" },
             { name: "mnt-by", value: "TEST-MNT" },
             { name: "source", value: "TEST" }
@@ -163,5 +163,6 @@ describe("authenticated WHOIS tools", () => {
     expect(result.ok).toBe(true);
     expect(result.ok && result.data.summary.errors).toBe(0);
     expect(result.ok && result.data.issues.map((issue) => issue.code)).toContain("sensitive_auth_attributes_redacted");
+    expect(result.ok && result.data.issues.find((issue) => issue.field === "tech-c")).toBeUndefined();
   });
 });

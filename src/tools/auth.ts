@@ -572,14 +572,14 @@ function auditArinObject(objectType: string, data: unknown): AuditIssue[] {
 function ripeRequiredAttributes(objectType: string): string[] {
   const common = ["mnt-by", "source"];
   const byType: Record<string, string[]> = {
-    organisation: ["organisation", "org-name", "org-type", "admin-c", "tech-c", ...common],
+    organisation: ["organisation", "org-name", "org-type", "address", "e-mail", "mnt-ref", ...common],
     inetnum: ["inetnum", "netname", "country", "admin-c", "tech-c", "status", ...common],
     inet6num: ["inet6num", "netname", "country", "admin-c", "tech-c", "status", ...common],
     "aut-num": ["aut-num", "as-name", "admin-c", "tech-c", "status", ...common],
-    mntner: ["mntner", "admin-c", "tech-c", "auth", ...common],
+    mntner: ["mntner", "admin-c", "upd-to", "auth", ...common],
     route: ["route", "origin", ...common],
     route6: ["route6", "origin", ...common],
-    "as-set": ["as-set", ...common],
+    "as-set": ["as-set", "admin-c", "tech-c", ...common],
     person: ["person", "nic-hdl", ...common],
     role: ["role", "nic-hdl", ...common]
   };
