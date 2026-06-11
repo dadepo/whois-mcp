@@ -12,6 +12,12 @@ export function envInt(key: string, defaultValue: number): number {
   return Number.isNaN(parsed) ? defaultValue : parsed;
 }
 
+export function envIntWithFallback(key: string, fallbackKey: string, defaultValue: number): number {
+  const raw = process.env[key] ?? process.env[fallbackKey] ?? String(defaultValue);
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? defaultValue : parsed;
+}
+
 export function envBool(key: string, defaultValue: boolean): boolean {
   const raw = (process.env[key] ?? "").toLowerCase().trim();
   if (!raw) {
@@ -68,8 +74,8 @@ export const LACNIC_WHOIS_PORT = 43;
 export const LACNIC_RDAP_BASE = "https://rdap.lacnic.net/rdap";
 
 export const HTTP_TIMEOUT_SECONDS = envInt("HTTP_TIMEOUT_SECONDS", 10);
-export const WHOIS_CONNECT_TIMEOUT_SECONDS = envInt("WHOIS_CONNECT_TIMEOUT_SECONDS", 5);
-export const WHOIS_READ_TIMEOUT_SECONDS = envInt("WHOIS_READ_TIMEOUT_SECONDS", 5);
+export const PORT43_CONNECT_TIMEOUT_SECONDS = envIntWithFallback("PORT43_CONNECT_TIMEOUT_SECONDS", "WHOIS_CONNECT_TIMEOUT_SECONDS", 5);
+export const PORT43_READ_TIMEOUT_SECONDS = envIntWithFallback("PORT43_READ_TIMEOUT_SECONDS", "WHOIS_READ_TIMEOUT_SECONDS", 5);
 export const CACHE_TTL_SECONDS = envInt("CACHE_TTL_SECONDS", 60);
 export const CACHE_MAX_ITEMS = envInt("CACHE_MAX_ITEMS", 512);
 export const USER_AGENT = envStr("USER_AGENT", "inet-registry-mcp/1.0");

@@ -2,15 +2,15 @@
 
 MCP server for Internet registry and registry-adjacent data used by network operators.
 
-Today it focuses on RIR data: WHOIS lookups, contact and abuse discovery, IRR route objects, AS-SET expansion, authenticated registry lookups, and basic WHOIS data quality checks.
+Today it starts with RIR data: ownership and contact lookups, abuse discovery, IRR route objects, AS-SET expansion, authenticated registry lookups, maintained-object inventory, and basic registry data quality checks.
 
 This project currently runs from a local checkout. It has not been published to npm yet.
 
 ## Scope
 
-The name is broader than WHOIS on purpose. The long-term shape is:
+The project is organized around Internet registry systems and registry-adjacent data sources:
 
-- numbering: RIR WHOIS/RDAP, IP and ASN allocation data, authenticated inventory, abuse and contact lookup
+- numbering: RIR/RDAP data, IP and ASN allocation data, authenticated inventory, abuse and contact lookup
 - routing: IRR route/route6/aut-num/as-set, RPKI ROA validation, BGP origin visibility, bogon and martian checks
 - naming: DNS delegation, DNSSEC validation, reverse DNS, IANA root and TLD data
 - interconnection: PeeringDB ASN, org, IX, facility, policy, and contact lookup
@@ -22,28 +22,25 @@ Not all of that exists yet. The current implementation starts with the RIR and I
 
 | Tool category | RIPE NCC | ARIN | APNIC | AfriNIC | LACNIC |
 | --- | :---: | :---: | :---: | :---: | :---: |
-| Raw WHOIS query | Yes | Yes | Yes | Yes | Yes |
+| Public registry query | Yes | Yes | Yes | Yes | Yes |
 | Contact card | Yes | Yes | Yes | Yes | Yes |
 | Route object validation | Yes | Yes | No | No | No |
 | AS-SET expansion | Yes | Yes | No | No | No |
 | Authenticated object lookup | Yes | Yes | Not implemented | Not implemented | Not implemented |
 | Authenticated resource inventory | Yes | Partial | Not implemented | Not implemented | Not implemented |
-| WHOIS data quality audit | Yes | Yes | Not implemented | Not implemented | Not implemented |
+| Registry data quality audit | Yes | Yes | Not implemented | Not implemented | Not implemented |
 
 `Not implemented` means this server does not yet expose a tested read-only authenticated path for that RIR. It does not mean the RIR has no authenticated services.
 
-Example tools:
+Current workflows:
 
-- `arin_whois_query`
-- `ripe_validate_route_object`
-- `ripe_expand_as_set`
-- `apnic_contact_card`
-- `afrinic_contact_card`
-- `lacnic_contact_card`
-- `whois_auth_status`
-- `whois_authenticated_object_lookup`
-- `whois_authenticated_resource_inventory`
-- `whois_data_quality_audit`
+- look up ownership and registration data for IPs and ASNs
+- find abuse, admin, and technical contacts
+- validate RIPE and ARIN route objects
+- expand RIPE and ARIN AS-SETs
+- list authenticated RIPE maintained objects
+- fetch authenticated RIPE and ARIN registry objects
+- audit authenticated RIPE and ARIN registry objects for basic data quality issues
 
 ## Install From Source
 
@@ -166,7 +163,7 @@ Show me all objects maintained by DADEPO-TEST-MNT.
 ```
 
 ```text
-Run a WHOIS data quality audit for RIPE maintainer DADEPO-TEST-MNT.
+Run a registry data quality audit for RIPE maintainer DADEPO-TEST-MNT.
 ```
 
 ## Configuration
@@ -187,8 +184,8 @@ SUPPORT_LACNIC=true
 
 # Timeouts and cache settings.
 HTTP_TIMEOUT_SECONDS=10
-WHOIS_CONNECT_TIMEOUT_SECONDS=5
-WHOIS_READ_TIMEOUT_SECONDS=5
+PORT43_CONNECT_TIMEOUT_SECONDS=5
+PORT43_READ_TIMEOUT_SECONDS=5
 CACHE_TTL_SECONDS=60
 CACHE_MAX_ITEMS=512
 
@@ -237,7 +234,7 @@ Current authenticated scope:
 
 - RIPE: object lookup, maintained-object inventory by inverse `mnt-by` lookup, and data quality audit.
 - ARIN: object lookup and data quality audit; inventory works for handles listed in `ARIN_INVENTORY_*`.
-- APNIC, AfriNIC, LACNIC: `whois_auth_status` reports configuration, but authenticated inventory/object/audit calls return `not_supported` until provider-specific read paths are implemented.
+- APNIC, AfriNIC, LACNIC: auth status reports configuration, but authenticated inventory/object/audit calls return `not_supported` until provider-specific read paths are implemented.
 
 Supported endpoint overrides for local testing:
 

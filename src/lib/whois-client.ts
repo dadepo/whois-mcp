@@ -1,6 +1,6 @@
 import net from "node:net";
 
-import { WHOIS_CONNECT_TIMEOUT_SECONDS, WHOIS_READ_TIMEOUT_SECONDS } from "../config.js";
+import { PORT43_CONNECT_TIMEOUT_SECONDS, PORT43_READ_TIMEOUT_SECONDS } from "../config.js";
 import type { WhoisEndpoint } from "../config.js";
 
 export class WhoisTimeoutError extends Error {
@@ -72,12 +72,12 @@ export class NodeWhoisClient implements WhoisClient {
           } else {
             settleReject(new WhoisTimeoutError("read"));
           }
-        }, WHOIS_READ_TIMEOUT_SECONDS * 1000);
+        }, PORT43_READ_TIMEOUT_SECONDS * 1000);
       };
 
       connectTimer = setTimeout(() => {
         settleReject(new WhoisTimeoutError("connect"));
-      }, WHOIS_CONNECT_TIMEOUT_SECONDS * 1000);
+      }, PORT43_CONNECT_TIMEOUT_SECONDS * 1000);
 
       socket.on("connect", () => {
         if (connectTimer) {
