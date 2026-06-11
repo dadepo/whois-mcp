@@ -4,6 +4,7 @@ import * as z from "zod/v4";
 import {
   arinUrlWithApiKey,
   authEndpoints,
+  authProfileValue,
   envList,
   parseWhoisMcpProfile,
   readAuthConfig,
@@ -183,7 +184,7 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_auth_status",
     {
       description:
-        "Show the read-only authenticated WHOIS profile, configured RIR credentials, endpoints, and available authenticated capabilities. Never returns secret values.",
+        "Show the read-only authenticated registry profile, configured RIR credentials, endpoints, and available authenticated capabilities. Never returns secret values.",
       inputSchema: {}
     },
     async () => toMcpResult(handleAuthStatus())
@@ -193,7 +194,7 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_resource_inventory",
     {
       description:
-        "Read-only authenticated WHOIS resource inventory. RIPE lists objects maintained by a mntner using an authenticated RIPE Database inverse lookup. ARIN reads configured inventory handles through Reg-RWS. Unsupported RIRs return an explicit not_supported result.",
+        "Read-only authenticated registry resource inventory. RIPE lists objects maintained by a mntner using an authenticated RIPE Database inverse lookup. ARIN reads configured inventory handles through Reg-RWS. Unsupported RIRs return an explicit not_supported result.",
       inputSchema: {
         rir: rirSchema.nullable().optional().describe("RIR to query. Defaults to RIPE. Currently implemented for RIPE and ARIN."),
         maintainer: z
@@ -215,7 +216,7 @@ export function registerAuthTools(server: McpServer, deps: ToolDependencies): vo
     "whois_authenticated_object_lookup",
     {
       description:
-        "Read-only authenticated lookup for a specific WHOIS registry object. Supports RIPE Database REST API and ARIN Reg-RWS. Local MCP credential secrets are redacted, but authenticated registry object values are returned as received.",
+        "Read-only authenticated lookup for a specific registry object. Supports RIPE Database REST API and ARIN Reg-RWS. Local MCP credential secrets are redacted, but authenticated registry object values are returned as received.",
       inputSchema: {
         rir: rirSchema.describe("RIR to query. Currently implemented for RIPE and ARIN."),
         object_type: z.string().describe("Registry object type, for example organisation, mntner, inetnum, aut-num, route, org, net, poc."),
@@ -248,7 +249,7 @@ async function getRipeInventory(
 ): Promise<ToolResult<InventoryData>> {
   let profile;
   try {
-    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+    profile = parseWhoisMcpProfile(authProfileValue(env));
   } catch (error) {
     return invalidProfile(error);
   }
@@ -294,7 +295,7 @@ async function getRipeInventory(
 async function getArinInventory(deps: ToolDependencies, env: AuthEnv): Promise<ToolResult<InventoryData>> {
   let profile;
   try {
-    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+    profile = parseWhoisMcpProfile(authProfileValue(env));
   } catch (error) {
     return invalidProfile(error);
   }
@@ -360,7 +361,7 @@ async function getRipeObject(
 ): Promise<ToolResult<ObjectLookupData>> {
   let profile;
   try {
-    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+    profile = parseWhoisMcpProfile(authProfileValue(env));
   } catch (error) {
     return invalidProfile(error);
   }
@@ -404,7 +405,7 @@ async function getArinObject(
 ): Promise<ToolResult<ObjectLookupData>> {
   let profile;
   try {
-    profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+    profile = parseWhoisMcpProfile(authProfileValue(env));
   } catch (error) {
     return invalidProfile(error);
   }

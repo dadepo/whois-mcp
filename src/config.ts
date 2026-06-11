@@ -72,7 +72,7 @@ export const WHOIS_CONNECT_TIMEOUT_SECONDS = envInt("WHOIS_CONNECT_TIMEOUT_SECON
 export const WHOIS_READ_TIMEOUT_SECONDS = envInt("WHOIS_READ_TIMEOUT_SECONDS", 5);
 export const CACHE_TTL_SECONDS = envInt("CACHE_TTL_SECONDS", 60);
 export const CACHE_MAX_ITEMS = envInt("CACHE_MAX_ITEMS", 512);
-export const USER_AGENT = envStr("USER_AGENT", "whois-mcp/1.0");
+export const USER_AGENT = envStr("USER_AGENT", "inet-registry-mcp/1.0");
 
 export const HTTP_HOST = envStr("HTTP_HOST", "127.0.0.1");
 export const HTTP_PORT = envInt("HTTP_PORT", 8000);

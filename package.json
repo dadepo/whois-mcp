@@ -1,12 +1,35 @@
 {
-  "name": "whois-mcp",
+  "name": "inet-registry-mcp",
   "version": "0.1.0",
   "private": true,
+  "description": "MCP server for Internet registry and registry-adjacent data used by network operators.",
   "type": "module",
   "bin": {
-    "whois-mcp": "./bin/whois-mcp.js",
-    "whois-mcp-server": "./bin/whois-mcp-server.js"
+    "inet-registry-mcp": "./bin/inet-registry-mcp.js",
+    "inet-registry-mcp-server": "./bin/inet-registry-mcp-server.js"
   },
+  "keywords": [
+    "mcp",
+    "whois",
+    "rdap",
+    "rir",
+    "irr",
+    "arin",
+    "ripe",
+    "apnic",
+    "afrinic",
+    "lacnic",
+    "asn",
+    "bgp",
+    "as-set",
+    "abuse-contact",
+    "network-operators"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dadepo/inet-registry-mcp.git"
+  },
+  "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "node bin/choose-transport.js dev",

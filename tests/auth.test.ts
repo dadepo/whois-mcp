@@ -28,10 +28,10 @@ const ripeMntner = {
   }
 };
 
-describe("authenticated WHOIS tools", () => {
+describe("authenticated registry tools", () => {
   it("reports configured auth profile without exposing secrets", () => {
     const result = handleAuthStatus({
-      WHOIS_MCP_PROFILE: "prod",
+      INET_REGISTRY_MCP_PROFILE: "prod",
       RIPE_API_KEY: "ripe-secret",
       ARIN_API_KEY: "arin-secret"
     });
@@ -48,6 +48,16 @@ describe("authenticated WHOIS tools", () => {
     expect(JSON.stringify(result.data)).not.toContain("arin-secret");
   });
 
+  it("accepts the old auth profile env var as a fallback", () => {
+    const result = handleAuthStatus({
+      WHOIS_MCP_PROFILE: "test",
+      RIPE_API_KEY: "ripe-secret"
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.data.profile).toBe("test");
+  });
+
   it("uses the RIPE test database profile for authenticated object lookup and returns protected registry values", async () => {
     const deps = fakeDeps();
     deps.httpClient.set("https://rest-test.db.ripe.net/test/mntner/TEST-MNT.json?unfiltered", ripeMntner);
@@ -56,7 +66,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "ripe", object_type: "mntner", key: "TEST-MNT" },
       deps,
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         RIPE_API_KEY: "encoded-basic-secret",
         RIPE_DATABASE_REST_BASE: ""
       }
@@ -80,7 +90,7 @@ describe("authenticated WHOIS tools", () => {
       >[0],
       deps,
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         RIPE_API_KEY: "encoded-basic-secret"
       }
     );
@@ -95,7 +105,7 @@ describe("authenticated WHOIS tools", () => {
     const result = await handleAuthenticatedObjectLookup(
       { rir: "ripe", object_type: "mntner", key: "TEST-MNT" },
       fakeDeps(),
-      { WHOIS_MCP_PROFILE: "test" }
+      { INET_REGISTRY_MCP_PROFILE: "test" }
     );
 
     expect(result).toEqual({
@@ -122,7 +132,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "ripe", maintainer: "TEST-MNT", object_types: ["mntner", "organisation"] },
       deps,
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         RIPE_API_KEY: "encoded-basic-secret"
       }
     );
@@ -143,7 +153,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "ripe" },
       fakeDeps(),
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         RIPE_API_KEY: "encoded-basic-secret"
       }
     );
@@ -168,7 +178,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "arin", object_type: "org", key: "EXAMPLE" },
       deps,
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         ARIN_API_KEY: "API-SECRET"
       }
     );
@@ -183,7 +193,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "arin" },
       fakeDeps(),
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         ARIN_API_KEY: "API-SECRET"
       }
     );
@@ -204,7 +214,7 @@ describe("authenticated WHOIS tools", () => {
       { rir: "ripe", object_type: "mntner", key: "TEST-MNT" },
       deps,
       {
-        WHOIS_MCP_PROFILE: "test",
+        INET_REGISTRY_MCP_PROFILE: "test",
         RIPE_API_KEY: "encoded-basic-secret"
       }
     );

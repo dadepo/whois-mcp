@@ -4,12 +4,12 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
 import { HTTP_HOST, HTTP_PORT } from "./config.js";
-import { createWhoisMcpServer } from "./server.js";
+import { createInetRegistryMcpServer } from "./server.js";
 
 const app = createMcpExpressApp();
 
 app.post("/mcp", async (req, res) => {
-  const server = createWhoisMcpServer();
+  const server = createInetRegistryMcpServer();
   const transport = new StreamableHTTPServerTransport(
     {
       sessionIdGenerator: undefined
@@ -70,5 +70,5 @@ app.listen(HTTP_PORT, HTTP_HOST, (error?: Error) => {
     process.exit(1);
   }
 
-  console.log(`Starting whois-mcp server on http://${HTTP_HOST}:${HTTP_PORT}`);
+  console.log(`Starting inet-registry-mcp server on http://${HTTP_HOST}:${HTTP_PORT}`);
 });

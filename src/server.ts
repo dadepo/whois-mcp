@@ -3,10 +3,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { defaultToolDependencies, type ToolDependencies } from "./deps.js";
 import { registerTools } from "./register.js";
 
-export function createWhoisMcpServer(deps: ToolDependencies = defaultToolDependencies): McpServer {
+export function createInetRegistryMcpServer(deps: ToolDependencies = defaultToolDependencies): McpServer {
   const server = new McpServer(
     {
-      name: "whois-mcp",
+      name: "inet-registry-mcp",
       version: "0.1.0"
     },
     {

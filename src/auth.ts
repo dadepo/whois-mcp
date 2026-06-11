@@ -35,6 +35,9 @@ const profileAliases: Record<string, WhoisMcpProfile> = {
   testing: "test"
 };
 
+const authProfileEnv = "INET_REGISTRY_MCP_PROFILE";
+const legacyAuthProfileEnv = "WHOIS_MCP_PROFILE";
+
 const defaultEndpoints: Record<WhoisMcpProfile, AuthEndpointSet> = {
   production: {
     ripeDatabaseRestBase: "https://rest.db.ripe.net/ripe",
@@ -50,11 +53,15 @@ const defaultEndpoints: Record<WhoisMcpProfile, AuthEndpointSet> = {
   }
 };
 
-export function parseWhoisMcpProfile(rawProfile: string | undefined = process.env.WHOIS_MCP_PROFILE): WhoisMcpProfile {
+export function authProfileValue(env: AuthEnv = process.env): string | undefined {
+  return env[authProfileEnv] ?? env[legacyAuthProfileEnv];
+}
+
+export function parseWhoisMcpProfile(rawProfile: string | undefined = authProfileValue()): WhoisMcpProfile {
   const normalized = (rawProfile ?? "production").trim().toLowerCase();
   const profile = profileAliases[normalized];
   if (!profile) {
-    throw new Error("WHOIS_MCP_PROFILE must be one of: production, prod, test, testing");
+    throw new Error(`${authProfileEnv} must be one of: production, prod, test, testing`);
   }
   return profile;
 }
@@ -70,7 +77,7 @@ export function authEndpoints(profile: WhoisMcpProfile, env: AuthEnv = process.e
 }
 
 export function readAuthConfig(env: AuthEnv = process.env): AuthConfig {
-  const profile = parseWhoisMcpProfile(env.WHOIS_MCP_PROFILE);
+  const profile = parseWhoisMcpProfile(authProfileValue(env));
   const endpoints = authEndpoints(profile, env);
 
   const ripeHasDatabaseKey = hasValue(env.RIPE_API_KEY);
